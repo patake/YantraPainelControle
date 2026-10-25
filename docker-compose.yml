@@ -1,0 +1,50 @@
+# Ambiente local do administrativo: PHP-FPM (app), filas (queue), nginx (web) e PostgreSQL (db).
+# Painel: http://localhost:8000. Banco: localhost:5432.
+services:
+  app:
+    build: ./docker/php
+    image: yantra-painel-php:dev
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  queue:
+    image: yantra-painel-php:dev
+    command: php artisan queue:work --tries=3 --sleep=3
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  web:
+    image: nginx:1.29-alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-yantra_painel}
+      POSTGRES_USER: ${DB_USERNAME:-yantra}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-yantra}
+    ports:
+      - "5432:5432"
+    volumes:
+      # O PostgreSQL 18 grava os dados em /var/lib/postgresql/18/docker.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
