@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReleaseChannel;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['version', 'channel', 'storage_path', 'sha256', 'size_bytes', 'notes', 'published_at'])]
 class AgentRelease extends Model
 {
+    use Auditable;
+
     protected function casts(): array
     {
         return [

@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
+use App\Support\Cnpj;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected function casts(): array
     {
@@ -73,5 +77,22 @@ class Client extends Model
     public function exams(): HasMany
     {
         return $this->hasMany(Exam::class);
+    }
+
+    /**
+     * Clientes que o usuário pode ver: todos para a Staff Weega, só os vinculados
+     * para o operador (R-ACE-2 e R-ACE-3).
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        if (! $user->isStaff()) {
+            $query->whereHas('users', fn (Builder $users) => $users->whereKey($user->getKey()));
+        }
+    }
+
+    public function formattedCnpj(): string
+    {
+        return Cnpj::format($this->cnpj);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DeviceStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\DeviceFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
@@ -32,7 +33,7 @@ use Laravel\Sanctum\HasApiTokens;
 class Device extends Model implements AuthenticatableContract, AuthorizableContract
 {
     /** @use HasFactory<DeviceFactory> */
-    use Authenticatable, Authorizable, HasApiTokens, HasFactory, HasUuids;
+    use Auditable, Authenticatable, Authorizable, HasApiTokens, HasFactory, HasUuids;
 
     /**
      * Habilidade do token de um equipamento.

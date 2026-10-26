@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ExamFieldKind;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['exam_type_id', 'kind', 'placeholder', 'label', 'input', 'default_value', 'options', 'required', 'position'])]
 class ExamTypeField extends Model
 {
+    use Auditable;
+
     protected function casts(): array
     {
         return [

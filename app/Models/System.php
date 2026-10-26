@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SystemFeature;
+use App\Models\Concerns\Auditable;
 use Database\Factories\SystemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected function casts(): array
     {

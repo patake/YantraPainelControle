@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureAgentDevice;
+use App\Http\Middleware\EnsureTwoFactorIsConfirmed;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\SignAgentResponse;
 use Illuminate\Foundation\Application;
@@ -17,9 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'active' => EnsureUserIsActive::class,
             'agent' => EnsureAgentDevice::class,
             'agent.signed' => SignAgentResponse::class,
             'api.log' => LogApiRequest::class,
+            'role' => EnsureUserHasRole::class,
+            'two-factor.required' => EnsureTwoFactorIsConfirmed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

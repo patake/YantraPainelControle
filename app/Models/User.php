@@ -2,22 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRole;
+use App\Models\Concerns\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 #[Fillable(['name', 'email', 'password', 'role', 'active'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Auditable, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -32,6 +36,7 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'active' => 'boolean',
             'last_login_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -48,5 +53,49 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return $this->role->isStaff();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    /**
+     * Usuário ativo. O operador também precisa de um cliente ativo (R-ACE-6).
+     */
+    public function canSignIn(): bool
+    {
+        if (! $this->active) {
+            return false;
+        }
+
+        return $this->isStaff() || $this->clients()->where('active', true)->exists();
+    }
+
+    /**
+     * 2FA cadastrado e confirmado (R-ACE-5).
+     */
+    public function hasConfirmedTwoFactor(): bool
+    {
+        // isset() também cobre um usuário criado agora, sem as colunas do 2FA carregadas.
+        return isset($this->two_factor_secret, $this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Iniciais do nome, para o avatar.
+     */
+    public function initials(): string
+    {
+        $initials = Str::initials($this->name, true);
+
+        return Str::length($initials) > 1
+            ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
+            : $initials;
+    }
+
+    #[Scope]
+    protected function staff(Builder $query): void
+    {
+        $query->whereIn('role', [UserRole::Admin, UserRole::Support]);
     }
 }

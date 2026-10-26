@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\UserRole;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -47,6 +48,35 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Support,
+        ]);
+    }
+
+    /**
+     * Usuário com o 2FA cadastrado e confirmado (R-ACE-5).
+     */
+    public function withTwoFactor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['7KQ2-M9XD', 'R4TB-82LN'])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Operador vinculado a um cliente ativo, que pode entrar no painel (R-ACE-6).
+     */
+    public function operatorWithClient(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Operator,
+        ])->hasAttached(Client::factory());
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'active' => false,
         ]);
     }
 

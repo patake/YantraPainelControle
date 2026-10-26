@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ErpType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\ExamTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ExamType extends Model
 {
     /** @use HasFactory<ExamTypeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected function casts(): array
     {

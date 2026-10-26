@@ -21,6 +21,20 @@ services:
       - app
     restart: unless-stopped
 
+  # Build das telas (Vite, Tailwind e Flux). A máquina não tem Node.
+  # Build: docker compose run --rm node npm run build
+  # Desenvolvimento com recarga automática: docker compose --profile dev up -d node
+  node:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "5173:5173"
+    profiles:
+      - dev
+
   web:
     image: nginx:1.29-alpine
     ports:
