@@ -79,7 +79,7 @@ paths:
       operationId: getActivation
       security: []
       x-yantra-stage: E2
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - name: cnpj
           in: path
@@ -89,6 +89,10 @@ paths:
       responses:
         '200':
           description: Cliente e sistemas com licença livre.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
           content:
             application/json:
               schema:
@@ -108,7 +112,7 @@ paths:
       operationId: register
       security: []
       x-yantra-stage: E2
-      x-yantra-status: planned
+      x-yantra-status: implemented
       requestBody:
         required: true
         content:
@@ -118,12 +122,24 @@ paths:
       responses:
         '201':
           description: Equipamento registrado.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegisterResponse'
+        '200':
+          description: Reinstalação no mesmo cliente. O equipamento continua o mesmo e recebe um token novo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /license:
     get:

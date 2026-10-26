@@ -21,6 +21,16 @@ services:
       - app
     restart: unless-stopped
 
+  # Tarefas agendadas (routes/console.php), como a expiração dos trials.
+  scheduler:
+    image: yantra-painel-php:dev
+    command: php artisan schedule:work
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - app
+    restart: unless-stopped
+
   # Build das telas (Vite, Tailwind e Flux). A máquina não tem Node.
   # Build: docker compose run --rm node npm run build
   # Desenvolvimento com recarga automática: docker compose --profile dev up -d node

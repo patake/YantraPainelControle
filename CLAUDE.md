@@ -11,6 +11,15 @@ Cuidado: o LocalStack community não confere permissões e não guarda os objeto
 
 Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `docker compose exec -T app php artisan test --compact`. Rode o Pint com `docker compose exec -T app vendor/bin/pint app bootstrap config database routes tests --format agent`, porque o container não tem Git e a opção `--dirty` não funciona.
 
+Telas (Livewire 4 com Flux UI gratuito e Fortify):
+
+1. As páginas ficam em `resources/views/pages/` como componentes de arquivo único (`pages::staff.clients.index`). A área Staff fica em `/staff` (administrador e suporte) e a área Cliente em `/app` (operador).
+2. Compile as telas com `docker compose run --rm node npm run build`. Para recarga automática, use `docker compose --profile dev up -d node`.
+3. Escreva os textos das telas em português, dentro de `__()`. Os textos em inglês do kit têm tradução em `lang/pt_BR.json`.
+4. O 2FA é obrigatório. Nos testes, use `User::factory()->withTwoFactor()`. O operador precisa de um cliente ativo: use `User::factory()->operatorWithClient()`.
+5. O seeder cria `admin@weega.com.br`, `suporte@weega.com.br` e `operador@hospital-exemplo.com.br`, todos com a senha `password`. No primeiro login, cada um cadastra o 2FA.
+6. Os modelos com o trait `Auditable` gravam a auditoria sozinhos. Para uma ação sem evento de modelo, como vincular clientes, chame `$model->writeAudit()`.
+
 API do agente:
 
 1. O contrato OpenAPI fica em `resources/openapi/agent-v1.yaml` e abre em <http://localhost:8000/api/docs>. Atualize o contrato junto com cada rota nova e troque `x-yantra-status` para `implemented`. Um teste confere esse campo.

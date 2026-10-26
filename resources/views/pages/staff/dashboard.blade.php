@@ -71,7 +71,10 @@ new #[Title('Início')] class extends Component {
     </div>
 
     <flux:card class="flex flex-col gap-4">
-        <flux:heading size="lg">{{ __('Instalações aguardando decisão') }}</flux:heading>
+        <div class="flex items-center justify-between gap-4">
+            <flux:heading size="lg">{{ __('Instalações aguardando decisão') }}</flux:heading>
+            <flux:link :href="route('staff.devices.index', ['estado' => 'trial'])" wire:navigate>{{ __('Ativar ou bloquear') }}</flux:link>
+        </div>
 
         @if ($this->pendingDevices->isEmpty())
             <flux:text>{{ __('Nenhuma instalação nova aguarda decisão.') }}</flux:text>

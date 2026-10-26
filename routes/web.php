@@ -17,6 +17,8 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
         Route::livewire('clientes/{client}', 'pages::staff.clients.show')->name('clients.show');
         Route::livewire('clientes/{client}/editar', 'pages::staff.clients.form')->name('clients.edit');
 
+        Route::livewire('equipamentos', 'pages::staff.devices.index')->name('devices.index');
+
         Route::livewire('usuarios', 'pages::staff.users.index')->name('users.index');
         Route::livewire('usuarios/novo', 'pages::staff.users.form')->name('users.create');
         Route::livewire('usuarios/{user}/editar', 'pages::staff.users.form')->name('users.edit');

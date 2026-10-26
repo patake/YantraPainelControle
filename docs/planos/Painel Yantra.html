@@ -1,0 +1,742 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Painel Yantra</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: especificação técnica em coluna larga; mesma família visual do Plano do Agente (papel de ECG). Índice fixo no topo; seções em sequência: visão, modelo, fluxos, regras, telas, API, perguntas. */
+:root {
+  --paper: #fbfaf8;
+  --ink: #1d2430;
+  --muted: #5f6877;
+  --line: #e4e0db;
+  --grid-minor: #f3dcdc;
+  --trace: #b8323a;
+  --trace-soft: #f6e3e3;
+  --api: #8a6a2f;
+  --agent: #2f4a6b;
+  --ok: #2f7a52;
+  --warn: #a5650b;
+  --surface: #ffffff;
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14181e; --ink: #e8e6e3; --muted: #9aa3b0; --line: #2a313b;
+    --grid-minor: #2a1f22; --trace: #ef6b72; --trace-soft: #3a2226;
+    --api: #d3ad62; --agent: #7fa3cc; --ok: #6fc195; --warn: #e2a64a; --surface: #1b2028;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14181e; --ink: #e8e6e3; --muted: #9aa3b0; --line: #2a313b;
+  --grid-minor: #2a1f22; --trace: #ef6b72; --trace-soft: #3a2226;
+  --api: #d3ad62; --agent: #7fa3cc; --ok: #6fc195; --warn: #e2a64a; --surface: #1b2028;
+  color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+  display: grid; gap: 56px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-stretch: 85%; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 700; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; max-width: 70ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; font-variant-numeric: tabular-nums; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--trace); }
+header { display: grid; gap: 14px; }
+header .lede { color: var(--muted); font-size: 17px; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--font-mono); font-size: 13px; padding-block: 10px; border-block: 1px solid var(--line); }
+nav.toc a { color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--trace); text-decoration: underline; }
+nav.toc span { color: var(--trace); }
+section { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.section-head { display: grid; gap: 6px; }
+.section-head .eyebrow { color: var(--muted); }
+.note { color: var(--muted); font-size: 14px; }
+.diagram {
+  overflow-x: auto; border: 1px solid var(--line); background: var(--surface); padding: 16px;
+}
+.diagram pre.mermaid { margin: 0; background: transparent; font-family: var(--font-mono); font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid2 > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.table-box { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; padding: 2px 7px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.staff { color: var(--api); }
+.pill.cli { color: var(--agent); }
+.pill.agent { color: var(--trace); }
+.pill.pub { color: var(--muted); }
+ol.rules, ul.list { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+ol.rules li::marker { font-family: var(--font-mono); color: var(--trace); }
+.rulebox { border: 1px solid var(--line); background: var(--surface); padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.rulebox h3 { display: flex; gap: 10px; align-items: baseline; }
+.rulebox h3 .mono { color: var(--trace); font-size: 13px; font-weight: 500; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.screens { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.screens > div { border: 1px solid var(--line); background:
+  linear-gradient(var(--grid-minor) 1px, transparent 1px) 0 0 / 8px 8px,
+  linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px) 0 0 / 8px 8px, var(--surface);
+  padding: 18px 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.screens dl { margin: 0; display: grid; gap: 8px; }
+.screens dt { font-weight: 600; }
+.screens dd { margin: 0; color: var(--muted); font-size: 14px; }
+.screens dt .mono { color: var(--trace); font-weight: 400; margin-right: 6px; }
+@media (max-width: 760px) {
+  .grid2, .screens { grid-template-columns: 1fr; }
+  .rules-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Yantra Painel · Especificação do administrativo</span>
+    <h1>Painel Yantra</h1>
+    <p class="lede">O painel é a API e as telas do administrativo, em Laravel, na nuvem. Esta página define o modelo de dados, os fluxos, as regras, as telas e a API do agente. Ela é a referência para as migrations da E0 e para o contrato OpenAPI.</p>
+    <nav class="toc" aria-label="Seções">
+      <a href="#visao"><span>1</span> Visão geral</a>
+      <a href="#modelo"><span>2</span> Modelo de dados</a>
+      <a href="#fluxos"><span>3</span> Fluxos</a>
+      <a href="#estados"><span>4</span> Estados</a>
+      <a href="#regras"><span>5</span> Regras</a>
+      <a href="#telas"><span>6</span> Telas</a>
+      <a href="#api"><span>7</span> API do agente</a>
+      <a href="#perguntas"><span>8</span> Perguntas</a>
+    </nav>
+  </header>
+
+  <!-- 1 -->
+  <section id="visao">
+    <div class="section-head"><span class="eyebrow">1 · Visão geral</span><h2>Quem usa o painel</h2></div>
+    <p>O painel atende três tipos de cliente da API. Cada tipo tem uma forma própria de autenticação e uma área própria.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph Nuvem["Painel Yantra (Laravel, nuvem)"]
+    STAFF["Área Staff Weega<br/>/staff"]
+    CLI["Área Cliente<br/>/app"]
+    API["API do agente<br/>/api/v1/agent"]
+    Q["Filas<br/>(queue)"]
+    DB[("PostgreSQL")]
+    FS[("Bucket S3 privado<br/>previews/ · agent-releases/")]
+  end
+  ADM(["Administrador e suporte<br/>(Weega)"]) -->|sessão web| STAFF
+  OP(["Operador<br/>(hospital)"]) -->|sessão web| CLI
+  AG(["Agente Yantra<br/>(serviço Go no equipamento)"]) -->|HTTPS + token do equipamento| API
+  STAFF --> DB
+  CLI --> DB
+  API --> DB
+  API --> FS
+  CLI --> FS
+  API --> Q
+  AG -->|SQL por bind| ERP[("Tasy / Oracle<br/>rede do hospital")]
+  AG -->|cópia SMB| SRV[("File server<br/>do hospital")]
+</pre></div>
+    <div class="table-box"><table>
+      <thead><tr><th>Ator</th><th>Autenticação</th><th>O que faz</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill staff">STAFF</span> Administrador</td><td>Login web com senha e 2FA</td><td>Tudo: clientes, usuários, licenças, exames, SQLs, conexões, versões do agente, ativação de equipamentos.</td></tr>
+        <tr><td><span class="pill staff">STAFF</span> Suporte</td><td>Login web com senha e 2FA</td><td>Consulta tudo. Ativa e bloqueia equipamentos. Não altera SQLs, conexões nem licenças.</td></tr>
+        <tr><td><span class="pill cli">CLIENTE</span> Operador</td><td>Login web com senha e 2FA</td><td>Inicia exames, escolhe o paciente e os arquivos, confirma o laudo. Vê só os dados dos clientes vinculados.</td></tr>
+        <tr><td><span class="pill agent">AGENTE</span> Equipamento</td><td>Token Bearer do equipamento (Sanctum)</td><td>Registra o equipamento, consulta licença, parâmetros e comandos, envia arquivos e resultados.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- 2 -->
+  <section id="modelo">
+    <div class="section-head"><span class="eyebrow">2 · Modelo de dados</span><h2>Tabelas e relações</h2></div>
+    <p>As tabelas usam nomes em inglês, no padrão do Laravel. A tabela abaixo dá o nome em português de cada uma. O modelo tem três grupos: cadastro e licenças, exames e ERP, e operação.</p>
+    <div class="table-box"><table>
+      <thead><tr><th>Tabela</th><th>Nome no painel</th><th>Etapa</th></tr></thead>
+      <tbody>
+        <tr><td><code>clients</code></td><td>Clientes (empresas, por CNPJ)</td><td class="mono">E1</td></tr>
+        <tr><td><code>users</code>, <code>client_user</code></td><td>Usuários e vínculo usuário → cliente</td><td class="mono">E1</td></tr>
+        <tr><td><code>systems</code></td><td>Sistemas: YC PRT, YO PRT, YO SRC, YO HUB</td><td class="mono">E3</td></tr>
+        <tr><td><code>licenses</code></td><td>Licenças: quantidade por cliente e sistema</td><td class="mono">E3</td></tr>
+        <tr><td><code>devices</code></td><td>Equipamentos (instalações do agente)</td><td class="mono">E2</td></tr>
+        <tr><td><code>personal_access_tokens</code></td><td>Tokens dos equipamentos (Sanctum)</td><td class="mono">E0</td></tr>
+        <tr><td><code>erp_connections</code></td><td>Conexão do ERP (uma por cliente)</td><td class="mono">E5</td></tr>
+        <tr><td><code>exam_types</code>, <code>exam_type_fields</code></td><td>Exames (5 SQLs) e leituras</td><td class="mono">E5</td></tr>
+        <tr><td><code>device_settings</code>, <code>device_exam_type</code></td><td>Parametrização do equipamento</td><td class="mono">E5</td></tr>
+        <tr><td><code>exams</code>, <code>exam_files</code></td><td>Exames realizados (ciclos) e dados dos arquivos (sem o conteúdo)</td><td class="mono">E6</td></tr>
+        <tr><td><code>agent_commands</code></td><td>Comandos para o agente</td><td class="mono">E6</td></tr>
+        <tr><td><code>serial_rules</code></td><td>Regras regex da porta serial</td><td class="mono">E8</td></tr>
+        <tr><td><code>agent_releases</code></td><td>Versões do agente (atualização)</td><td class="mono">E4</td></tr>
+        <tr><td><code>api_request_logs</code>, <code>audit_logs</code></td><td>Log de requisições e auditoria</td><td class="mono">E1</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>2.1 Cadastro, licenças e equipamentos</h3>
+    <div class="diagram"><pre class="mermaid">
+erDiagram
+  clients ||--o{ client_user : "vinculo"
+  users ||--o{ client_user : "vinculo"
+  clients ||--o{ licenses : "tem pacote"
+  systems ||--o{ licenses : "vinculo"
+  clients ||--o{ devices : "registra"
+  systems ||--o{ devices : "1 por equipamento"
+  devices ||--o{ personal_access_tokens : "token"
+  users ||--o{ devices : "decidido_por"
+
+  clients {
+    bigint id PK
+    string cnpj UK "14 digitos"
+    string legal_name "razao social"
+    string trade_name "nome fantasia"
+    string contact_email
+    string contact_phone
+    boolean active
+    timestamps created_updated
+    timestamp deleted_at "soft delete"
+  }
+  users {
+    bigint id PK
+    string name
+    string email UK
+    string password
+    string role "admin | support | operator"
+    boolean active
+    string two_factor_secret "TOTP, obrigatorio"
+    timestamp last_login_at
+  }
+  client_user {
+    bigint client_id FK
+    bigint user_id FK
+  }
+  systems {
+    bigint id PK
+    string code UK "YC_PRT YO_PRT YO_SRC YO_HUB"
+    string name "Yantra Cardio Printer"
+    string feature "printer | screen | serial"
+    json branding "icone, cores"
+  }
+  licenses {
+    bigint id PK
+    bigint client_id FK
+    bigint system_id FK
+    int quantity "maximo de equipamentos"
+    date valid_until "nulo = sem prazo"
+  }
+  devices {
+    uuid id PK
+    bigint client_id FK
+    bigint system_id FK
+    string signature UK "SHA-256 SMBIOS + MachineGuid"
+    string status "trial | active | expired | blocked"
+    timestamp trial_ends_at "registro + 7 dias"
+    bigint decided_by FK "staff que ativou ou bloqueou"
+    timestamp decided_at
+    string hostname
+    string machine_type
+    string domain
+    json macs
+    string windows_version
+    string agent_version
+    int config_version
+    timestamp last_seen_at
+    timestamp registered_at
+  }
+</pre></div>
+
+    <h3>2.2 Exames, ERP e parametrização</h3>
+    <div class="diagram"><pre class="mermaid">
+erDiagram
+  clients ||--o| erp_connections : "uma conexao"
+  clients ||--o{ exam_types : "cadastra"
+  exam_types ||--o{ exam_type_fields : "leituras"
+  exam_types ||--o{ serial_rules : "regras E8"
+  devices ||--|| device_settings : "vinculo"
+  devices ||--o{ device_exam_type : "vinculo"
+  exam_types ||--o{ device_exam_type : "vinculo"
+
+  erp_connections {
+    bigint id PK
+    bigint client_id FK,UK
+    string db_type "oracle (driver no agente)"
+    string host
+    int port
+    string service_name
+    string username
+    text password "criptografada (cast encrypted)"
+    json options
+  }
+  exam_types {
+    bigint id PK
+    bigint client_id FK
+    string name UK "unico por cliente"
+    string erp_type "TASY_HTML5 | DELPHI | JAVA"
+    string procedure_code
+    string destination_folder "PASTA, ex. servidor yantra"
+    text sql_query "consulta de pacientes"
+    text sql_auth "autenticacao"
+    text sql_insert "gravacao LAUDO_PACIENTE"
+    text sql_image "LAUDO_PACIENTE_IMAGEM"
+    text sql_update "PRESCR_PROCEDIMENTO"
+    json print_options
+    boolean active
+    int version
+  }
+  exam_type_fields {
+    bigint id PK
+    bigint exam_type_id FK
+    string kind "internal | param | filter | info"
+    string placeholder "X em chaves no SQL"
+    string label
+    string input "text | date | select | number"
+    string default_value
+    boolean required
+    int position
+  }
+  serial_rules {
+    bigint id PK
+    bigint exam_type_id FK
+    string field
+    string pattern "regex RE2"
+    int position
+  }
+  device_settings {
+    uuid device_id PK,FK
+    string capture_base_path "C:/ProgramData/YantraAgente/capturas"
+    string network_username "fora de dominio"
+    text network_password "criptografada"
+    string hotkey "Ctrl+Y (E7)"
+    string serial_port "COM3 (E8)"
+  }
+  device_exam_type {
+    uuid device_id FK
+    bigint exam_type_id FK
+  }
+</pre></div>
+
+    <h3>2.3 Operação: exames realizados, comandos, versões e logs</h3>
+    <div class="diagram"><pre class="mermaid">
+erDiagram
+  devices ||--o{ exams : "um aberto por vez"
+  exam_types ||--o{ exams : "vinculo"
+  users ||--o{ exams : "operador"
+  exams ||--o{ exam_files : "vinculo"
+  devices ||--o{ agent_commands : "vinculo"
+  exams ||--o{ agent_commands : "opcional"
+  users ||--o{ audit_logs : "vinculo"
+  devices ||--o{ api_request_logs : "vinculo"
+
+  exams {
+    uuid id PK
+    bigint client_id FK
+    uuid device_id FK
+    bigint exam_type_id FK
+    bigint operator_id FK
+    string status "ver diagrama de estados"
+    string temp_folder "capturas/exame/timestamp"
+    json patient "linha escolhida da consulta"
+    json complementary_info
+    timestamp started_at
+    timestamp completed_at
+  }
+  exam_files {
+    uuid id PK
+    uuid exam_id FK
+    string kind "pdf | png | serial_raw | serial_data"
+    string original_name
+    string preview_path "temporario, nulo depois do fim"
+    string sha256
+    bigint size_bytes
+    boolean selected "escolhido para o laudo"
+    string final_path "caminho no file server"
+    string erp_report_id "NR_SEQUENCIA do laudo"
+  }
+  agent_commands {
+    uuid id PK
+    uuid device_id FK
+    uuid exam_id FK "nulo em comandos gerais"
+    string type "start_exam | query_patients | record_report | test_erp | sync | cancel_exam"
+    text payload "criptografado"
+    string status "pending | delivered | done | failed | expired"
+    json result
+    timestamp expires_at
+    timestamp delivered_at
+    timestamp completed_at
+  }
+  agent_releases {
+    bigint id PK
+    string version UK "semver"
+    string channel "pilot | stable"
+    string storage_path
+    string sha256
+    text notes
+    timestamp published_at
+  }
+  api_request_logs {
+    bigint id PK
+    uuid device_id FK "nulo para web"
+    bigint user_id FK
+    string method
+    string route
+    int status
+    int duration_ms
+    string ip
+    timestamp created_at
+  }
+  audit_logs {
+    bigint id PK
+    bigint user_id FK
+    string action "created | updated | deleted | activated | blocked"
+    string auditable_type
+    string auditable_id
+    json old_values "sem senhas"
+    json new_values "sem senhas"
+    string ip
+    timestamp created_at
+  }
+</pre></div>
+    <p class="note">Os campos sensíveis (<code>password</code> da conexão, <code>network_password</code>, <code>payload</code> dos comandos) usam o cast <code>encrypted</code> do Laravel. A auditoria grava a troca desses campos, mas não grava o valor.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="fluxos">
+    <div class="section-head"><span class="eyebrow">3 · Fluxos</span><h2>Como as partes conversam</h2></div>
+
+    <h3>3.1 Cadastro prévio e ativação por CNPJ</h3>
+    <p>A Staff Weega cadastra o cliente e as licenças antes da instalação. O técnico instala o agente, informa o CNPJ e escolhe um sistema. Cada instalação nova entra em trial e aparece na lista de decisões da Staff.</p>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor S as Staff Weega
+  participant P as Painel
+  actor T as Técnico
+  participant A as Agente
+  S->>P: Cadastra cliente (CNPJ) e licenças por sistema
+  T->>A: Instala o agente e abre o assistente
+  T->>A: Informa o CNPJ
+  A->>A: Valida os dígitos verificadores
+  A->>P: GET /agent/activation/{cnpj}
+  P-->>A: Nome do cliente e sistemas com licenças livres
+  T->>A: Marca um sistema
+  A->>A: Gera a assinatura (SHA-256)
+  A->>P: POST /agent/register (CNPJ, sistema, assinatura, dados da máquina)
+  P->>P: Confere licença livre e assinatura repetida
+  P-->>A: device_id, token, trial_ends_at
+  A->>A: Guarda o token com DPAPI
+  P-->>S: Equipamento novo na lista "aguardando decisão"
+  S->>P: Ativa ou bloqueia
+  A->>P: GET /agent/license (consulta periódica)
+  P-->>A: Estado assinado (active ou blocked)
+</pre></div>
+
+    <h3>3.2 Ciclo de exame com o ERP</h3>
+    <p>O operador conduz o exame no painel. O agente faz as partes que precisam da rede do hospital: o Oracle e o file server.</p>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor O as Operador
+  participant P as Painel
+  participant A as Agente
+  participant E as Tasy / Oracle
+  participant F as File server
+  O->>P: Inicia o exame (equipamento + tipo de exame)
+  P->>P: Cria exam (status open) e comando start_exam
+  A->>P: GET /agent/commands
+  P-->>A: start_exam
+  A->>A: Cria a pasta temporária e vigia
+  A->>P: POST /agent/commands/{id}/result (pasta criada)
+  Note over A: Impressora, captura de tela ou serial gravam arquivos
+  A->>P: POST /agent/exams/{id}/files (cópia de preview de cada arquivo)
+  A-->>O: Notificação do Windows "arquivo disponível"
+  O->>P: Informa Parâmetros e Filtros
+  P->>P: Comando query_patients
+  A->>P: GET /agent/commands
+  A->>E: SQL de consulta (bind)
+  E-->>A: Linhas de pacientes
+  A->>P: Resultado com as linhas
+  O->>P: Escolhe paciente e arquivos, preenche Informações Complementares
+  O->>P: Informa usuário e senha do Tasy e confirma
+  P->>P: Comando record_report (payload criptografado, expira em 2 min)
+  A->>P: GET /agent/commands
+  A->>E: SQL de autenticação
+  A->>F: Copia cada PDF original da pasta temporária para a pasta final
+  A->>E: SQLs de gravação, imagem e atualização (por PDF)
+  A->>P: Resultado: caminhos finais e ids dos laudos
+  P->>P: Apaga o payload e os previews, conclui o exame
+  P-->>O: Exame concluído
+</pre></div>
+
+    <h3>3.3 Canal de comandos</h3>
+    <div class="grid2">
+      <div>
+        <p>O agente consulta <code>GET /agent/commands</code> a cada 5 segundos enquanto há um exame aberto. Sem exame aberto, a consulta acontece a cada 30 segundos. A consulta também serve de sinal de vida: ela atualiza <code>devices.last_seen_at</code>.</p>
+        <p>O painel entrega cada comando uma vez. O agente responde com <code>POST /agent/commands/{id}/result</code>. Um comando sem resposta até <code>expires_at</code> passa para <code>expired</code>, e o painel mostra o erro ao operador.</p>
+      </div>
+      <div class="table-box"><table>
+        <thead><tr><th>Comando</th><th>Validade</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td><code>start_exam</code></td><td>5 min</td><td>pasta temporária</td></tr>
+          <tr><td><code>query_patients</code></td><td>1 min</td><td>linhas da consulta</td></tr>
+          <tr><td><code>record_report</code></td><td>2 min</td><td>caminhos e ids dos laudos</td></tr>
+          <tr><td><code>test_erp</code></td><td>1 min</td><td>sucesso ou erro do Oracle</td></tr>
+          <tr><td><code>cancel_exam</code></td><td>5 min</td><td>pasta descartada</td></tr>
+          <tr><td><code>sync</code></td><td>5 min</td><td>fila reenviada</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <h3>3.4 Parâmetros assinados</h3>
+    <p>O painel monta os parâmetros do equipamento num JSON: exames, SQLs, leituras, conexão do ERP, pastas e credencial de rede. O painel assina o JSON com uma chave Ed25519. O agente tem a chave pública no instalador e rejeita parâmetros com assinatura inválida. Cada alteração de exame, conexão ou parametrização aumenta <code>devices.config_version</code>. O agente baixa os parâmetros quando a versão muda.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="estados">
+    <div class="section-head"><span class="eyebrow">4 · Estados</span><h2>Estados do equipamento e do exame</h2></div>
+    <div class="grid2">
+      <div>
+        <h3>Equipamento (<code>devices.status</code>)</h3>
+        <div class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> trial: registro
+  trial --> active: Staff ativa
+  trial --> expired: 7 dias sem decisão
+  trial --> blocked: Staff bloqueia
+  expired --> active: Staff ativa
+  active --> blocked: Staff bloqueia
+  blocked --> active: Staff ativa
+</pre></div>
+        <p class="note">O estado "bloqueado por falta de conexão" existe só no agente, depois de 7 dias sem resposta da API. O painel não guarda esse estado.</p>
+      </div>
+      <div>
+        <h3>Exame (<code>exams.status</code>)</h3>
+        <div class="diagram"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> starting: operador inicia
+  starting --> capturing: agente criou a pasta
+  capturing --> reviewing: primeiro arquivo
+  reviewing --> recording: operador confirma
+  recording --> completed: laudos gravados
+  recording --> reviewing: erro no ERP
+  starting --> failed: comando expirou
+  capturing --> cancelled: operador cancela
+  reviewing --> cancelled: operador cancela
+</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="regras">
+    <div class="section-head"><span class="eyebrow">5 · Regras</span><h2>Regras de negócio</h2></div>
+    <p>Cada regra tem um código. Os testes automatizados citam o código da regra que verificam.</p>
+    <div class="rules-grid">
+      <div class="rulebox">
+        <h3><span class="mono">R-ACE</span> Acesso e clientes</h3>
+        <ol class="rules">
+          <li>O CNPJ é único e tem os dígitos verificadores válidos.</li>
+          <li>Um operador vê só os dados dos clientes vinculados a ele. Um escopo global no Eloquent aplica este filtro.</li>
+          <li>Administrador e suporte veem todos os clientes.</li>
+          <li>Só o administrador cria usuários da Staff Weega.</li>
+          <li>Todo login exige 2FA por aplicativo autenticador (TOTP), para a Staff e para o operador. O 2FA é obrigatório: o primeiro login pede o cadastro do autenticador.</li>
+          <li>Um cliente desativado bloqueia o login dos operadores e a API dos equipamentos dele.</li>
+        </ol>
+      </div>
+      <div class="rulebox">
+        <h3><span class="mono">R-LIC</span> Licenças e equipamentos</h3>
+        <ol class="rules">
+          <li>Licença em uso = equipamentos do cliente e do sistema nos estados <code>trial</code> ou <code>active</code>.</li>
+          <li>O registro só acontece se licença em uso &lt; <code>licenses.quantity</code>. O trial já usa uma licença.</li>
+          <li>O trial termina 7 dias depois do registro. Uma tarefa agendada muda o estado para <code>expired</code>.</li>
+          <li>Só a Staff Weega ativa, bloqueia ou desbloqueia um equipamento.</li>
+          <li>Um equipamento tem um sistema só.</li>
+          <li>A mesma assinatura em outro cliente não registra. O painel marca o caso como suspeita de clone.</li>
+          <li>A mesma assinatura no mesmo cliente reaproveita o equipamento e gera um token novo (reinstalação).</li>
+          <li>A consulta por CNPJ tem limite de 10 tentativas por hora por IP.</li>
+        </ol>
+      </div>
+      <div class="rulebox">
+        <h3><span class="mono">R-EXA</span> Exames</h3>
+        <ol class="rules">
+          <li>Um equipamento tem no máximo um exame aberto. Um índice parcial no PostgreSQL garante a regra.</li>
+          <li>O operador inicia exame só em equipamento <code>active</code> ou <code>trial</code>, com o tipo de exame habilitado.</li>
+          <li>Só o administrador altera SQLs, conexões do ERP e pastas de destino.</li>
+          <li>Os SQLs usam marcadores <code>{X}</code>. O agente troca cada marcador por uma variável de ligação (bind), nunca por texto.</li>
+          <li>A senha do Tasy fica só no payload do comando <code>record_report</code>. O painel apaga o payload depois do resultado ou da expiração.</li>
+          <li>O painel não guarda arquivos de exame. O agente envia só uma cópia de preview. O original fica na pasta temporária do equipamento até a cópia para o file server.</li>
+          <li>O painel apaga os previews quando o exame termina: concluído, cancelado ou com falha. Uma tarefa agendada apaga a cada hora os previews com mais de 24 horas. A regra de ciclo de vida do bucket apaga a pasta <code>previews/</code> depois de 1 dia, como segunda garantia.</li>
+          <li>Depois do fim do exame, o painel guarda só os dados do arquivo: nome, tamanho, SHA-256, caminho final e id do laudo.</li>
+        </ol>
+      </div>
+      <div class="rulebox">
+        <h3><span class="mono">R-SEG</span> Segurança e auditoria</h3>
+        <ol class="rules">
+          <li>Cada equipamento tem um token Sanctum com a habilidade <code>agent</code>. O bloqueio do equipamento não revoga o token: a API responde só a licença.</li>
+          <li>As respostas de licença e de parâmetros têm assinatura Ed25519.</li>
+          <li>O painel registra cada requisição da API em <code>api_request_logs</code>, sem corpo e sem cabeçalho de autorização.</li>
+          <li>O painel registra cada ação dos usuários em <code>audit_logs</code>, com valor antigo e valor novo.</li>
+          <li>A auditoria nunca grava senhas nem payloads de comando.</li>
+          <li>O upload aceita só PDF, PNG e texto, até 50 MB, e confere o SHA-256 enviado pelo agente.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="telas">
+    <div class="section-head"><span class="eyebrow">6 · Telas</span><h2>Telas das duas áreas</h2></div>
+    <div class="screens">
+      <div>
+        <h3>Área Staff Weega <span class="pill staff">/staff</span></h3>
+        <dl>
+          <dt><span class="mono">E1</span>Início</dt><dd>Equipamentos aguardando decisão, equipamentos sem sinal, exames com erro.</dd>
+          <dt><span class="mono">E1</span>Clientes</dt><dd>Lista, cadastro, usuários vinculados, licenças e equipamentos do cliente.</dd>
+          <dt><span class="mono">E1</span>Usuários</dt><dd>Staff e operadores, papel, vínculo aos clientes, ativação.</dd>
+          <dt><span class="mono">E3</span>Sistemas e licenças</dt><dd>Sistemas e identidade visual. Quantidade por cliente, com o uso atual.</dd>
+          <dt><span class="mono">E2</span>Equipamentos</dt><dd>Lista com filtros por cliente, estado e último sinal. Ações: ativar, bloquear.</dd>
+          <dt><span class="mono">E5</span>Exames</dt><dd>Cadastro com os 5 SQLs e as leituras. Importação de <code>EXAME.json</code> e <code>PARAMETROS.json</code>.</dd>
+          <dt><span class="mono">E5</span>Conexão do ERP</dt><dd>Uma por cliente. Botão "Testar conexão" envia o comando <code>test_erp</code> a um equipamento.</dd>
+          <dt><span class="mono">E4</span>Versões do agente</dt><dd>Envio do instalador, canal piloto ou estável, notas da versão.</dd>
+          <dt><span class="mono">E1</span>Log e auditoria</dt><dd>Consulta com filtros por data, cliente, equipamento, usuário e rota.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Área Cliente <span class="pill cli">/app</span></h3>
+        <dl>
+          <dt><span class="mono">E6</span>Equipamentos</dt><dd>Equipamentos do cliente, online ou offline, e o exame em andamento.</dd>
+          <dt><span class="mono">E6</span>Novo exame</dt><dd>Escolha do equipamento e do tipo de exame.</dd>
+          <dt><span class="mono">E6</span>Exame em andamento</dt><dd>Arquivos recebidos com preview, Parâmetros e Filtros, lista de pacientes do ERP, Informações Complementares.</dd>
+          <dt><span class="mono">E6</span>Confirmação</dt><dd>Usuário e senha do Tasy, resultado de cada laudo.</dd>
+          <dt><span class="mono">E6</span>Histórico</dt><dd>Exames por data, paciente, equipamento e estado.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="api">
+    <div class="section-head"><span class="eyebrow">7 · API do agente</span><h2>Endpoints da versão 1</h2></div>
+    <p>Prefixo <code>/api/v1/agent</code>. Todas as respostas usam JSON. O contrato OpenAPI fica publicado em <code>/api/docs</code>. A etapa indica quando cada endpoint entra.</p>
+    <div class="table-box"><table>
+      <thead><tr><th>Método e rota</th><th>Acesso</th><th>Função</th><th>Etapa</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /activation/{cnpj}</code></td><td><span class="pill pub">PÚBLICO</span></td><td>Nome do cliente e sistemas com licenças livres. Limite R-LIC-8.</td><td class="mono">E2</td></tr>
+        <tr><td><code>POST /register</code></td><td><span class="pill pub">PÚBLICO</span></td><td>Registra o equipamento e devolve o token.</td><td class="mono">E2</td></tr>
+        <tr><td><code>GET /license</code></td><td><span class="pill agent">TOKEN</span></td><td>Estado da licença e sistema liberado, com assinatura.</td><td class="mono">E3</td></tr>
+        <tr><td><code>GET /config</code></td><td><span class="pill agent">TOKEN</span></td><td>Parâmetros assinados, com <code>config_version</code>.</td><td class="mono">E5</td></tr>
+        <tr><td><code>GET /commands</code></td><td><span class="pill agent">TOKEN</span></td><td>Comandos pendentes. Atualiza o último sinal.</td><td class="mono">E6</td></tr>
+        <tr><td><code>POST /commands/{id}/result</code></td><td><span class="pill agent">TOKEN</span></td><td>Resultado de um comando.</td><td class="mono">E6</td></tr>
+        <tr><td><code>POST /exams/{id}/files</code></td><td><span class="pill agent">TOKEN</span></td><td>Envio da cópia de preview de um arquivo (multipart, com SHA-256). O painel apaga a cópia no fim do exame.</td><td class="mono">E6</td></tr>
+        <tr><td><code>POST /exams/{id}/data</code></td><td><span class="pill agent">TOKEN</span></td><td>Dados extraídos da porta serial.</td><td class="mono">E8</td></tr>
+        <tr><td><code>GET /updates/latest</code></td><td><span class="pill agent">TOKEN</span></td><td>Versão disponível, URL temporária e SHA-256.</td><td class="mono">E4</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Os nomes refinam os endpoints do Plano do Agente. Exemplo: <code>POST /agents/register</code> passa a ser <code>POST /api/v1/agent/register</code>. O equipamento sai do token, por isso as rotas não têm <code>{id}</code> do equipamento.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="perguntas">
+    <div class="section-head"><span class="eyebrow">8 · Decisões e perguntas</span><h2>Decisões do painel</h2></div>
+    <ol class="rules">
+      <li><b>Interface:</b> Livewire 4 com Flux UI (kit inicial do Laravel 13). As telas ficam em PHP e Blade. (decidido em 25/10/2026)</li>
+      <li><b>2FA:</b> obrigatório para todos os usuários, Staff e operador, por aplicativo autenticador (TOTP). (decidido em 25/10/2026)</li>
+      <li><b>Arquivos de exame:</b> o painel não guarda arquivos. O painel mostra só um preview temporário, e o agente copia os originais para o file server do hospital. (decidido em 25/10/2026)</li>
+      <li><b>Armazenamento:</b> um bucket S3 privado, com duas pastas. (decidido em 25/10/2026)
+        <ul class="list" style="margin-top: 6px">
+          <li><code>previews/&lt;cliente&gt;/&lt;exame&gt;/&lt;arquivo&gt;</code>: cópias de preview. O painel apaga a pasta do exame no fim do exame. A regra de ciclo de vida apaga qualquer objeto com mais de 1 dia.</li>
+          <li><code>agent-releases/&lt;versão&gt;/YantraAgente-Setup-&lt;versão&gt;.exe</code>: instaladores do agente, sem prazo de expiração.</li>
+          <li>O bucket bloqueia o acesso público e criptografa os objetos (SSE-S3). O navegador e o agente baixam os arquivos só por URLs assinadas, com validade de poucos minutos.</li>
+          <li>Em desenvolvimento, o Docker roda o LocalStack, que usa a mesma API do S3. O código do painel é o mesmo nos dois ambientes. O LocalStack community não confere permissões: o acesso privado só vale no S3 da AWS.</li>
+        </ul>
+      </li>
+    </ol>
+    <ol class="rules" start="5">
+      <li><b>Hospedagem:</b> AWS, região de São Paulo (<code>sa-east-1</code>), por causa da LGPD e da latência. (decidido em 25/10/2026)</li>
+    </ol>
+    <p class="note">Nenhuma pergunta em aberto.</p>
+  </section>
+</div>
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+
+</body></html>

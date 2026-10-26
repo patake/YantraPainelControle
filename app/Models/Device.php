@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DeviceStatus;
+use App\Exceptions\LicenseUnavailableException;
 use App\Models\Concerns\Auditable;
 use Database\Factories\DeviceFactory;
 use Illuminate\Auth\Authenticatable;
@@ -129,6 +130,40 @@ class Device extends Model implements AuthenticatableContract, AuthorizableContr
     protected function trialOverdue(Builder $query): void
     {
         $query->where('status', DeviceStatus::Trial)->where('trial_ends_at', '<=', now());
+    }
+
+    /**
+     * Ativa a licença do equipamento. Só a Staff Weega decide (R-LIC-4).
+     * Um equipamento fora do trial precisa de uma licença livre para voltar (R-LIC-2).
+     */
+    public function activate(User $by): void
+    {
+        if (! in_array($this->status, DeviceStatus::usingLicense(), true)) {
+            $license = License::whereBelongsTo($this->client)->whereBelongsTo($this->system)->first();
+
+            if ($license === null || ! $license->hasAvailableSeat()) {
+                throw new LicenseUnavailableException(__('Todas as licenças do sistema :system estão em uso.', ['system' => $this->system->name]));
+            }
+        }
+
+        $this->update([
+            'status' => DeviceStatus::Active,
+            'trial_ends_at' => null,
+            'decided_by' => $by->id,
+            'decided_at' => now(),
+        ]);
+    }
+
+    /**
+     * Bloqueia o equipamento. O token continua válido: a API responde só a licença (R-SEG-1).
+     */
+    public function block(User $by): void
+    {
+        $this->update([
+            'status' => DeviceStatus::Blocked,
+            'decided_by' => $by->id,
+            'decided_at' => now(),
+        ]);
     }
 
     /**

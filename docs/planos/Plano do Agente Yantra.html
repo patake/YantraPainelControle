@@ -1,0 +1,693 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Plano do Agente Yantra</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coluna de leitura larga; gráfico de Gantt sobre papel milimetrado de ECG; etapas como fichas técnicas com duas trilhas (Administrativo e Agente). */
+:root {
+  --paper: #fbfaf8;
+  --ink: #1d2430;
+  --muted: #5f6877;
+  --line: #e4e0db;
+  --grid-minor: #f3dcdc;
+  --grid-major: #e9b9b9;
+  --trace: #b8323a;
+  --trace-soft: #f6e3e3;
+  --bar: #2f4a6b;
+  --api: #8a6a2f;
+  --bar-done: #3f7d5c;
+  --ok: #2f7a52;
+  --warn: #a5650b;
+  --surface: #ffffff;
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14181e; --ink: #e8e6e3; --muted: #9aa3b0; --line: #2a313b;
+    --grid-minor: #2a1f22; --grid-major: #4a2a2f; --trace: #ef6b72; --trace-soft: #3a2226;
+    --bar: #7fa3cc; --api: #d3ad62; --bar-done: #6fc195; --ok: #6fc195; --warn: #e2a64a; --surface: #1b2028;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14181e; --ink: #e8e6e3; --muted: #9aa3b0; --line: #2a313b;
+  --grid-minor: #2a1f22; --grid-major: #4a2a2f; --trace: #ef6b72; --trace-soft: #3a2226;
+  --bar: #7fa3cc; --api: #d3ad62; --bar-done: #6fc195; --ok: #6fc195; --warn: #e2a64a; --surface: #1b2028;
+  color-scheme: dark;
+}
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+}
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+  display: grid; gap: 48px;
+}
+h1, h2, h3, h4 { font-family: var(--font-display); font-stretch: 85%; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 700; }
+h3 { font-size: 19px; font-weight: 700; }
+h4 { font-size: 13px; font-family: var(--font-mono); font-stretch: 100%; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--trace);
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header { display: grid; gap: 14px; }
+header .lede { color: var(--muted); font-size: 17px; }
+
+/* Resumo */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 0; }
+.summary div { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+.summary dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.summary dd { margin: 0; font-family: var(--font-display); font-stretch: 85%; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.summary dd small { font-family: var(--font-body); font-size: 13px; font-weight: 400; color: var(--muted); }
+
+/* Gantt */
+section { display: grid; gap: 16px; }
+.gantt-box { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+.gantt-box svg { display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 18px; height: 10px; display: inline-block; }
+
+/* Etapas */
+.stages { display: grid; gap: 20px; }
+.stage { background: var(--surface); border: 1px solid var(--line); display: grid; grid-template-columns: 220px 1fr; }
+.stage-head { padding: 20px; border-right: 1px solid var(--line); display: grid; gap: 10px; align-content: start; background:
+  linear-gradient(var(--grid-minor) 1px, transparent 1px) 0 0 / 8px 8px,
+  linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px) 0 0 / 8px 8px; }
+.stage-head .code { font-family: var(--font-mono); font-size: 13px; color: var(--trace); font-weight: 500; }
+.stage-head .dates, .stage-head .split { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter { height: 6px; background: var(--line); position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--bar-done); }
+.meter-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.tag { justify-self: start; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--trace); color: var(--trace); }
+.stage-body { padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.stage-body .goal { color: var(--muted); }
+.track { display: grid; gap: 6px; }
+.track h4.api { color: var(--api); }
+.track h4.agent { color: var(--bar); }
+.track .endpoints { font-size: 13px; color: var(--muted); padding-left: 8px; }
+.track .endpoints code { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+ul.checks label { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; padding: 6px 8px; cursor: pointer; }
+ul.checks label:hover { background: var(--trace-soft); }
+ul.checks input { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--bar-done); }
+ul.checks input:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
+ul.checks input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+ul.checks input:disabled { cursor: not-allowed; }
+
+.status { font-size: 13px; color: var(--muted); }
+.status.err { color: var(--warn); }
+
+/* Listas finais */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.cols > div { display: grid; gap: 12px; align-content: start; min-width: 0; }
+ol.list, ul.list { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+ol.list li::marker { font-family: var(--font-mono); color: var(--trace); }
+.arch { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); padding: 16px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; margin: 0; }
+
+@media (max-width: 760px) {
+  .stage { grid-template-columns: 1fr; }
+  .stage-head { border-right: 0; border-bottom: 1px solid var(--line); }
+  .cols { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .meter i { transition: width .3s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Yantra Agente · Plano de desenvolvimento</span>
+    <h1>Plano do Agente Yantra</h1>
+    <p class="lede">O app de bandeja atual (antes Yantra PDF, agora Yantra Agente) vai virar o agente instalado em cada equipamento. O agente conversa com o painel administrativo (Laravel, na nuvem), gera PDFs, captura telas e lê dados da porta serial. A mesma equipe desenvolve o agente e o administrativo.</p>
+  </header>
+
+  <dl class="summary" id="summary"></dl>
+
+  <section>
+    <h2>Cronograma</h2>
+    <p class="status">As datas usam dias úteis e descontam os feriados nacionais. Em cada etapa, a parte do administrativo vem antes da parte do agente, porque o agente usa os endpoints novos. A captura de tela e a porta serial chegam aos equipamentos pela atualização automática.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--api)"></i>Administrativo (API e painel Laravel)</span>
+      <span><i class="sw" style="background:var(--bar)"></i>Agente (serviço e app de bandeja)</span>
+      <span><i class="sw" style="background:var(--bar-done)"></i>Concluído (checklist)</span>
+      <span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0 12 6 6 12 0 6Z" fill="var(--trace)"/></svg>Versão publicada</span>
+    </div>
+    <div class="gantt-box" id="gantt" aria-label="Gráfico de Gantt com as etapas do plano"></div>
+  </section>
+
+  <section>
+    <h2>Já entregue</h2>
+    <p>Estas entregas aconteceram antes da E0. Elas formam a base do agente.</p>
+    <ul class="list">
+      <li><b>v1.0.0 (24/10/2026):</b> impressora virtual Yantra Printer, serviço <span class="mono">pdfprinterd</span>, app de bandeja e instalador único. Testado no Windows: a impressora gera o PDF e o app mostra a notificação.</li>
+      <li><b>Nome Yantra Agente (25/10/2026):</b> o app, o instalador e a documentação usam o nome novo. A atualização da v1.0.0 para o Yantra Agente foi testada e funcionou.</li>
+      <li><b>Pasta nova (25/10/2026):</b> o projeto do agente mudou para <span class="mono">C:\YantraAgente</span>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Arquitetura alvo</h2>
+    <p>O serviço roda como SYSTEM e tem a responsabilidade pelas partes que o usuário não pode alterar: assinatura do equipamento, licença, comunicação com a API, acesso ao ERP do hospital, leitura da porta serial, cópia para o file server e instalação das atualizações. O ERP fica na rede do hospital, onde a nuvem não chega. Por isso o agente executa os SQLs do ERP. O app de bandeja roda na sessão de cada usuário do Windows. O app mostra as notificações, os assistentes e a tela Sobre, e captura a tela.</p>
+<pre class="arch">Administrativo (Laravel, AWS São Paulo · sa-east-1)
+ ├─ área Staff Weega: clientes, usuários, sistemas, licenças, equipamentos, exames, logs e auditoria
+ ├─ área Cliente: login, execução dos exames, interação com o agente
+ └─ API do agente
+   ▲  HTTPS · token por equipamento · respostas assinadas · consulta periódica de comandos
+   │
+serviço pdfprinterd (Go, SYSTEM, um por equipamento)   app de bandeja Yantra Agente (Flutter, um por sessão de usuário)
+ ├─ assinatura do equipamento + registro                ├─ menu: Sobre, Forçar sincronização, Sair
+ ├─ licença: trial / ativa / bloqueada / offline        ├─ estado da licença, notificações e tela Sobre
+ ├─ parâmetros (cache para uso sem conexão)             ├─ captura de tela (combinação de teclas do assistente)
+ ├─ ciclo de exame: pasta temporária, envio, cópia      ├─ assistentes: ativação (CNPJ), porta COM e teclas
+ ├─ fila de envio offline                               └─ aviso e aprovação de atualização
+ ├─ porta serial 9600 bps 8N1 + regras regex do painel
+ ├─ ERP do hospital (Tasy/Oracle, rede local): consulta, autenticação e gravação do laudo
+ ├─ impressora virtual Yantra Printer (porta 9100)
+ └─ download e instalação silenciosa de atualizações
+        ▲ API local 127.0.0.1:9187 (eventos SSE) ▼</pre>
+    <h3>Decisões confirmadas</h3>
+    <ol class="list">
+      <li><b>Nome:</b> o projeto se chama <b>Yantra Agente</b>. A impressora continua com o nome <b>Yantra Printer</b>.</li>
+      <li><b>Equipe:</b> 2 pessoas (o desenvolvedor e o Claude Code). A mesma equipe desenvolve o agente e o administrativo, em etapas intercaladas.</li>
+      <li><b>Ordem das etapas:</b> a atualização automática (E3) vem antes das funções novas.</li>
+      <li><b>Núcleo do agente:</b> o serviço do Windows é o núcleo. O mesmo instalador coloca o serviço e o app de bandeja em cada equipamento. Os dois trabalham juntos pela API local <span class="mono">127.0.0.1:9187</span>.</li>
+      <li><b>Instalação global:</b> o agente funciona para qualquer usuário do Windows. O instalador configura o equipamento inteiro, não só o usuário que instala.</li>
+      <li><b>Instalação e ativação:</b> a instalação funciona sem internet. O registro e a ativação precisam de internet. Até o primeiro registro, o agente fica no estado "aguardando registro" e não captura exames, porque os parâmetros vêm da API.</li>
+      <li><b>Trial:</b> o trial dura 7 dias a partir do registro. Depois do prazo, o agente bloqueia automaticamente. Só a Staff Weega desbloqueia, no administrativo.</li>
+      <li><b>Porta serial:</b> a conexão é genérica: 9600 bps, 8 bits de dados, 1 bit de parada, sem paridade. O conteúdo muda conforme o equipamento. Regras regex definidas no painel extraem os dados. A leitura USB fica para uma etapa futura, fora deste cronograma.</li>
+      <li><b>Combinação de teclas:</b> um assistente pede ao usuário a combinação da captura de tela. O assistente sugere <span class="mono">Ctrl + Y</span> e testa se a combinação está livre no equipamento.</li>
+      <li><b>Certificado de assinatura de código:</b> a Weega Technologies compra o certificado.</li>
+      <li><b>Um exame por vez:</b> o agente tem só um ciclo de exame aberto. O operador inicia o exame no painel, para um equipamento. Todas as ações de exame ficam no painel.</li>
+      <li><b>Menu da bandeja:</b> o menu tem só três itens: Sobre, Forçar sincronização e Sair.</li>
+      <li><b>File server:</b> os equipamentos quase sempre estão num domínio. O serviço copia os arquivos com a conta do computador. Fora de domínio, o serviço usa uma credencial de rede dos parâmetros.</li>
+      <li><b>Pastas e nomes:</b> capturas em <span class="mono">C:\ProgramData\YantraAgente\capturas</span> (os parâmetros podem mudar). A pasta final usa o padrão do Yantra Cardio 3.0: <span class="mono">&lt;PASTA&gt;\&lt;PACIENTE&gt;-&lt;NASCIMENTO&gt;\aaaa\mm\dd\&lt;Exame&gt;-&lt;ATENDIMENTO&gt;-&lt;n&gt;.pdf</span>. Assim, os arquivos novos ficam junto com o histórico dos clientes atuais.</li>
+      <li><b>Canal de comandos:</b> o agente consulta a API a cada poucos segundos. O WebSocket (Laravel Reverb) pode vir depois.</li>
+      <li><b>Assinatura do equipamento:</b> a chave é o hash do UUID da placa-mãe (SMBIOS) e do <span class="mono">MachineGuid</span> do Windows. Nome, tipo, domínio e MACs vão para o painel só como informação.</li>
+      <li><b>Tela Sobre:</b> o app tem uma tela Sobre com a versão, os dados da licença, os sistemas licenciados e o contato da Weega Technologies.</li>
+      <li><b>Início automático:</b> o agente inicia com o Windows em todas as sessões. O menu da bandeja não tem mais o item "Iniciar com o Windows".</li>
+      <li><b>Sistemas:</b> a licença é por cliente e por sistema. Cada sistema libera uma função do agente: YC PRT e YO PRT (impressora), YO SRC (captura de tela) e YO HUB (porta serial).</li>
+      <li><b>Hospedagem:</b> AWS, região de São Paulo (<span class="mono">sa-east-1</span>), por causa da LGPD e da latência. Os arquivos ficam num bucket S3 privado com duas pastas: <span class="mono">previews/</span> (cópias de preview, apagadas no fim do exame e, como segunda garantia, depois de 1 dia) e <span class="mono">agent-releases/</span> (instaladores do agente). Em desenvolvimento, o LocalStack faz o papel do S3. (decidido em 25/10/2026)</li>
+      <li><b>Cadastro antes da instalação:</b> a Staff Weega cadastra a empresa e o pacote de licenças de cada sistema antes de o cliente instalar o agente.</li>
+      <li><b>Ativação por CNPJ:</b> na primeira execução, o assistente de ativação pede o CNPJ da empresa. O assistente mostra os sistemas e as licenças disponíveis. Se o CNPJ existe no cadastro e há licença disponível, o agente gera a assinatura, registra o equipamento e ativa o trial.</li>
+      <li><b>Identidade visual:</b> YC PRT (Yantra Cardio Printer) e YO PRT (Yantra Optical Printer) são a mesma aplicação, para cardiologia e para oftalmologia. Só mudam o nome, os ícones e as cores. Existe um instalador só. Depois da ativação, o nome fica "Yantra Agente" mais o nome do sistema ativado.</li>
+      <li><b>Papéis:</b> Staff Weega tem administrador e suporte. Cliente tem operador.</li>
+      <li><b>Liberação de cada instalação:</b> a Staff Weega define a quantidade máxima de licenças do CNPJ. Cada instalação nova entra em trial e aguarda a decisão da Staff Weega. Só a Staff Weega ativa e desativa licenças.</li>
+      <li><b>Um sistema por computador:</b> no assistente, o técnico marca um sistema entre os sistemas disponíveis para o CNPJ.</li>
+      <li><b>Sem visualizador no agente:</b> o agente não abre janela de PDF. A conferência acontece só no painel. O agente mostra uma notificação quando o arquivo está disponível no painel.</li>
+      <li><b>Tecnologia do administrativo:</b> repositório separado, PHP 8.5.12 ou mais recente, a versão mais recente do Laravel e PostgreSQL. O ambiente de desenvolvimento roda no Docker.</li>
+      <li><b>Pastas e repositórios:</b> o agente fica em <span class="mono">C:\YantraAgente</span> (GitHub <span class="mono">patake/YantraAgente</span>). O administrativo fica em <span class="mono">C:\YantraPainelControle</span> (GitHub <span class="mono">patake/YantraPainelControle</span>).</li>
+      <li><b>Integração com o ERP:</b> o agente executa os SQLs do exame no Oracle do Tasy, na rede do hospital. O painel guarda os SQLs e manda comandos. O agente devolve o resultado ao painel.</li>
+      <li><b>Lista de pacientes:</b> o agente executa o SQL de consulta do exame e envia as linhas ao painel. O operador escolhe o paciente no painel.</li>
+      <li><b>Autenticação no ERP:</b> na confirmação do laudo, o operador informa o usuário e a senha do Tasy no painel. O agente valida com o SQL de autenticação. A senha não fica guardada.</li>
+      <li><b>Modelo de exame:</b> o mesmo do Yantra Cardio 3.0: tipo, 5 SQLs (consulta, autenticação, gravação, imagem e atualização), leituras (Parâmetro Interno, Parâmetro, Filtro e Informação Complementar) e opções de impressão. Os exames atuais entram por importação.</li>
+      <li><b>Conexão com o banco do ERP:</b> cada cliente tem uma conexão só. Hoje todos os clientes usam Tasy com Oracle. A conexão tem um campo de tipo de banco, e o agente acessa o banco por uma camada própria. Assim, um ERP ou banco diferente no futuro exige só um driver novo no agente. Os SQLs ficam no cadastro do exame, independentes do código.</li>
+      <li><b>Segurança dos SQLs:</b> só a Staff Weega altera SQLs e conexões. A API assina os parâmetros, e o agente rejeita parâmetros sem assinatura válida. Os valores do operador e do paciente entram por variáveis de ligação (bind), sem substituição de texto.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Administrativo</h2>
+    <p>O administrativo tem duas áreas, com login e permissões separados. Cada módulo indica a etapa em que entra.</p>
+    <div class="cols">
+      <div>
+        <h3>Área Staff Weega</h3>
+        <ul class="list">
+          <li><b>Clientes</b>: cadastro das empresas clientes. (E1)</li>
+          <li><b>Usuários</b>: usuários da Weega (administrador, suporte) e dos clientes (operador). (E1)</li>
+          <li><b>Usuários → clientes</b>: vínculo de cada usuário a um ou mais clientes. (E1)</li>
+          <li><b>Sistemas</b>: YC PRT, YO PRT (impressora), YO SRC (captura de tela) e YO HUB (porta serial). (E3)</li>
+          <li><b>Licenças</b>: quantidade por cliente e por sistema. (E3)</li>
+          <li><b>Equipamentos</b>: equipamentos registrados, cliente, sistemas e estado da licença. (E2, E3)</li>
+          <li><b>Exames e parametrizações</b>: exames no modelo do Yantra Cardio 3.0 (5 SQLs e leituras), importação dos exames atuais, conexão Oracle do ERP, pastas, credenciais e regras regex. (E5, E8)</li>
+          <li><b>Log e auditoria</b>: registro completo das requisições da API e das ações dos usuários. (E1)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Área Cliente</h3>
+        <ul class="list">
+          <li><b>Login</b> no ambiente do cliente. (E1)</li>
+          <li><b>Execução dos exames</b>: início do exame num equipamento, lista de pacientes do ERP, conferência dos arquivos, escolha do paciente e do laudo, informações complementares, login no Tasy e confirmação. Papel: operador. (E6)</li>
+          <li><b>Interação com o agente</b>: estado dos equipamentos do cliente e do exame em andamento. (E6)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ciclo de exame</h2>
+    <p>O ciclo começa quando o operador inicia o exame no painel e termina quando o laudo está gravado no ERP e o PDF está no file server. O fluxo segue o Yantra Cardio 3.0. A diferença é que a tela de Finalização agora fica no painel e o agente executa os SQLs.</p>
+    <ol class="list">
+      <li>O operador inicia o exame no painel, para um equipamento. A API envia o comando de início ao agente. O agente cria a pasta temporária <span class="mono">&lt;pasta base&gt;\capturas\&lt;nome do exame&gt;\&lt;timestamp&gt;</span> e vigia esta pasta.</li>
+      <li>A impressora Yantra Printer, a captura de tela e a porta serial gravam os arquivos do exame na pasta temporária.</li>
+      <li>O agente envia cada arquivo para o painel administrativo. Quando o arquivo está disponível no painel, o agente mostra uma notificação.</li>
+      <li>O painel pede ao agente a lista de pacientes. O agente executa o SQL de consulta no Oracle, com os Parâmetros e Filtros do operador, e devolve as linhas.</li>
+      <li>No painel, o operador escolhe o paciente e os arquivos, preenche as Informações Complementares e informa o usuário e a senha do Tasy.</li>
+      <li>A API envia ao agente o comando de gravação. O agente valida o usuário com o SQL de autenticação.</li>
+      <li>O agente copia cada PDF para a pasta final no file server:
+        <pre class="arch">&lt;PASTA do exame&gt;\&lt;PACIENTE&gt;-&lt;NASCIMENTO&gt;\&lt;aaaa&gt;\&lt;mm&gt;\&lt;dd&gt;\&lt;Exame&gt;-&lt;ATENDIMENTO&gt;-&lt;n&gt;.pdf</pre></li>
+      <li>Para cada PDF, o agente executa os SQLs de gravação (cria o laudo), de imagem (liga o caminho do PDF ao laudo) e de atualização (tira o pedido da fila).</li>
+      <li>O agente devolve ao painel os caminhos finais e os ids dos laudos. A API conclui o exame.</li>
+      <li>O agente cria uma pasta temporária nova e volta ao passo 2.</li>
+    </ol>
+    <p class="status">O caminho do PDF vai para o Tasy (tabela de imagens do laudo). Por isso a PASTA do exame precisa ser um caminho que o Tasy também acessa, por exemplo <span class="mono">\\servidor\yantra</span>.</p>
+  </section>
+
+  <section>
+    <h2>Etapas e checklists</h2>
+    <p class="status" id="db-status">Carregando o progresso salvo…</p>
+    <div class="stages" id="stages"></div>
+  </section>
+
+  <section class="cols">
+    <div>
+      <h2>Perguntas em aberto</h2>
+      <p class="status">Nenhuma pergunta em aberto. A última pergunta, a hospedagem, foi decidida em 25/10/2026: AWS em São Paulo.</p>
+    </div>
+    <div>
+      <h2>Suposições</h2>
+      <ul class="list">
+        <li>Início em <span class="mono">26/10/2026</span>. A equipe tem 2 pessoas: o desenvolvedor e o Claude Code.</li>
+        <li>Semana de 5 dias úteis. Feriados descontados: <span class="mono">02/11, 20/11, 24/12, 25/12, 31/12, 01/01, 08/02, 09/02, 26/03 e 21/04</span>.</li>
+        <li>Em cada etapa, o administrativo e o agente andam em sequência.</li>
+        <li>As estimativas incluem testes automatizados de cada etapa.</li>
+        <li>A leitura USB fica fora deste cronograma. Ela entra depois da homologação da porta serial.</li>
+        <li>Cada estação alcança o Oracle do ERP pela rede do hospital, como no Yantra Cardio 3.0. A equipe tem acesso a um Tasy de homologação para os testes da E6.</li>
+        <li>No file server, a equipe de TI do cliente dá permissão de gravação às contas de computador do domínio (grupo <span class="mono">Computadores do domínio</span>) na pasta de destino.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const START = "2026-10-26";
+const TODAY = "2026-10-25";
+const HOLIDAYS = new Set(["2026-11-02","2026-11-20","2026-12-24","2026-12-25","2026-12-31","2027-01-01","2027-02-08","2027-02-09","2027-03-26","2027-04-21"]);
+
+const STAGES = [
+  { id: "e0", code: "E0", name: "Fundação e contrato da API", apiDays: 5, days: 5,
+    goal: "Definir como o agente conversa com a API, criar o projeto Laravel e preparar a estrutura do agente.",
+    endpoints: "Contrato OpenAPI aprovado. Ambiente de desenvolvimento da API no ar.",
+    apiItems: [
+      "Criar o projeto Laravel em C:\\YantraPainelControle: versão mais recente, PHP 8.5.12+, PostgreSQL e filas",
+      "Criar o ambiente Docker (docker-compose): PHP 8.5, PostgreSQL, o processador de filas e o S3 local (LocalStack)",
+      "Fazer o primeiro push para o repositório patake/YantraPainelControle",
+      "Criar a autenticação dos agentes: token por equipamento e assinatura das respostas",
+      "Criar o modelo de dados: clientes, usuários, sistemas, licenças, equipamentos, parâmetros, exames, arquivos e comandos",
+      "Publicar o contrato OpenAPI na própria API"
+    ],
+    items: [
+      "Escrever o contrato da API do agente em OpenAPI: registro, licença, parâmetros, exames, arquivos, comandos e atualização",
+      "Definir o canal de comandos da API para o agente: consulta periódica a cada poucos segundos",
+      "Definir as funções do serviço (SYSTEM) e do app de bandeja",
+      "Tornar a instalação global: início automático para todos os usuários e atalho no Menu Iniciar de todos os usuários",
+      "Deixar no menu da bandeja só: Sobre, Forçar sincronização e Sair",
+      "Remover a janela de visualização do PDF. O agente mostra só notificações, assistentes e a tela Sobre",
+      "Reorganizar o código em módulos: núcleo, licença, parâmetros, exames, capturas e atualização",
+      "Adicionar log local com rotação de arquivos"
+    ] },
+  { id: "e1", code: "E1", name: "Base do administrativo", apiDays: 10, days: 0,
+    goal: "Criar as duas áreas do administrativo, os cadastros de clientes e usuários, e o registro de requisições e auditoria.",
+    endpoints: "Só administrativo. O agente não muda nesta etapa.",
+    apiItems: [
+      "Criar o login da área Staff Weega e o login da área Cliente",
+      "Criar o cadastro de clientes",
+      "Criar o cadastro de usuários, com os papéis administrador e suporte (Staff Weega) e operador (Cliente)",
+      "Vincular cada usuário a um ou mais clientes",
+      "Separar os dados de cada cliente: um usuário de cliente vê só os dados do próprio cliente",
+      "Registrar todas as requisições da API: data, equipamento, rota, resultado e tempo",
+      "Registrar a auditoria das ações dos usuários: quem, quando, o quê, valor antigo e valor novo",
+      "Criar as telas de consulta do log e da auditoria, com filtros"
+    ],
+    items: [] },
+  { id: "e2", code: "E2", name: "Identidade do equipamento e registro", apiDays: 4, days: 5,
+    goal: "Gerar uma assinatura única para cada equipamento, registrar o equipamento na API e vincular o equipamento a um cliente.",
+    endpoints: "<code>POST /agents/register</code>",
+    apiItems: [
+      "Criar o endpoint de consulta por CNPJ: sistemas e licenças disponíveis do cliente",
+      "Criar o endpoint de registro: aceitar só CNPJ cadastrado com licença disponível, vincular ao cliente e ativar o trial",
+      "Limitar as tentativas de consulta por CNPJ e registrar cada tentativa no log",
+      "Criar a lista de instalações novas que aguardam a decisão da Staff Weega",
+      "Detectar assinatura repetida e equipamento clonado",
+      "Criar a tela de equipamentos: cliente, nome, tipo, domínio, MACs e data de registro"
+    ],
+    items: [
+      "Coletar os dados da máquina: UUID da placa-mãe, MachineGuid, nome, tipo, domínio, MACs e versão do Windows",
+      "Gerar a assinatura com hash SHA-256 do UUID da placa-mãe e do MachineGuid",
+      "Funcionar no estado \"aguardando registro\" quando não há internet",
+      "Criar o assistente de ativação: pedir o CNPJ e validar os dígitos verificadores",
+      "Mostrar no assistente os sistemas e as licenças disponíveis do cliente",
+      "Pedir ao técnico que marque um sistema (um sistema por computador)",
+      "Registrar o equipamento na API e ativar o trial quando o CNPJ e as licenças estão corretos",
+      "Guardar o ID e o token do equipamento com proteção do Windows (DPAPI)",
+      "Escrever os testes unitários da assinatura"
+    ] },
+  { id: "e3", code: "E3", name: "Licenciamento por sistema", apiDays: 8, days: 9,
+    goal: "Controlar as licenças por cliente e por sistema, o trial de 7 dias e o bloqueio, inclusive após 7 dias sem conexão.",
+    endpoints: "<code>GET /agents/{id}/license</code> com resposta assinada",
+    apiItems: [
+      "Criar o cadastro de sistemas: YC PRT, YO PRT, YO SRC e YO HUB",
+      "Criar o cadastro de licenças: quantidade por cliente e por sistema",
+      "Usar uma licença do sistema escolhido no registro, inclusive no trial, e respeitar a quantidade máxima do CNPJ",
+      "Calcular o fim do trial: 7 dias a partir do registro",
+      "Criar as ações de ativar e desativar a licença do equipamento (só a Staff Weega)",
+      "Criar o endpoint de licença com resposta assinada e a lista de sistemas liberados"
+    ],
+    items: [
+      "Implementar os estados da licença: aguardando registro, trial, ativa, trial expirado, bloqueada e bloqueada por falta de conexão",
+      "Liberar só as funções dos sistemas licenciados: impressora, captura de tela e porta serial",
+      "Aplicar a identidade visual do sistema ativado: ícones, cores e o nome \"Yantra Agente\" mais o nome do sistema",
+      "Bloquear o agente quando o trial termina. Só o administrativo desbloqueia",
+      "Consultar a licença na API em intervalos regulares e validar a assinatura da resposta",
+      "Bloquear o agente após 7 dias consecutivos sem conexão",
+      "Detectar o relógio do Windows alterado para trás",
+      "Desbloquear o agente quando a API confirmar a licença ativa",
+      "Mostrar a tela de licença bloqueada com a mensagem e o contato da Weega Technologies",
+      "Criar a tela Sobre: versão, dados da licença, sistemas licenciados e contato da Weega Technologies",
+      "Testar os cenários: trial, bloqueio, 7 dias sem conexão e retorno da conexão"
+    ] },
+  { id: "e4", code: "E4", name: "Atualização automática", apiDays: 3, days: 8, release: "v1.1 · piloto",
+    goal: "Entregar as próximas versões para todos os agentes sem visita técnica. O piloto precisa da API num servidor na nuvem.",
+    endpoints: "<code>GET /agents/updates/latest</code>",
+    apiItems: [
+      "Criar o envio do instalador no administrativo, com versão e notas da versão",
+      "Criar o endpoint da versão disponível, com hash do instalador",
+      "Publicar a API num servidor de homologação na AWS para o piloto"
+    ],
+    items: [
+      "Consultar a versão disponível na API",
+      "Baixar o instalador novo em segundo plano",
+      "Verificar o hash e a assinatura do instalador antes de usar",
+      "Avisar o usuário com uma notificação e uma mensagem fixa no ícone da bandeja",
+      "Instalar após a aprovação do usuário, de forma silenciosa, pelo serviço (sem pedir administrador)",
+      "Instalar automaticamente quando o app reiniciar",
+      "Assinar o executável e o instalador com o certificado da Weega Technologies",
+      "Instalar a versão v1.1 nos equipamentos do piloto"
+    ] },
+  { id: "e5", code: "E5", name: "Exames, conexão ERP e parametrização", apiDays: 8, days: 7,
+    goal: "Cadastrar os exames no modelo do Yantra Cardio 3.0 (5 SQLs e leituras), a conexão com o ERP do hospital e a configuração de cada equipamento.",
+    endpoints: "<code>GET /agents/{id}/config</code> (parâmetros assinados pela API)",
+    apiItems: [
+      "Criar o cadastro de exames: tipo (TASY HTML5, Delphi ou Java), descrição, procedimento e opções de impressão",
+      "Cadastrar os 5 SQLs do exame: consulta, autenticação, gravação, imagem e atualização",
+      "Cadastrar as leituras do exame: Parâmetro Interno, Parâmetro, Filtro e Informação Complementar",
+      "Importar os exames do Yantra Cardio 3.0 (arquivos EXAME.json e PARAMETROS.json de cada exame)",
+      "Criar o cadastro da conexão do ERP: uma por cliente, com tipo de banco (Oracle agora) e senha criptografada",
+      "Criar a parametrização por equipamento: exames, pasta base das capturas e credencial de rede",
+      "Assinar os parâmetros na API. Só a Staff Weega altera SQLs e conexões",
+      "Criar o endpoint de parâmetros, com número de versão"
+    ],
+    items: [
+      "Baixar os parâmetros a cada ciclo de exame e validar a assinatura da API",
+      "Aplicar os parâmetros: exames, SQLs, leituras, conexão Oracle, pasta base e credencial de rede",
+      "Criar a camada de banco do agente, com um driver por tipo de banco",
+      "Criar o driver Oracle com Go puro (go-ora), sem Oracle Instant Client",
+      "Criar o comando de teste da conexão Oracle e devolver o resultado ao painel",
+      "Guardar a última versão dos parâmetros para uso sem conexão",
+      "Rejeitar parâmetros inválidos e manter a versão anterior"
+    ] },
+  { id: "e6", code: "E6", name: "Ciclo de exame com o ERP", apiDays: 14, days: 14, release: "v2.0 · MVP",
+    goal: "Capturar os arquivos do exame, escolher o paciente da consulta do ERP no painel, gravar o laudo no Tasy pelo agente e copiar o PDF para o file server.",
+    endpoints: "<code>POST /exams</code>, <code>POST /exams/{id}/files</code>, <code>GET /agents/{id}/commands</code>, <code>POST /commands/{id}/result</code> e <code>POST /exams/{id}/complete</code>",
+    apiItems: [
+      "Área Cliente: iniciar o exame num equipamento e criar o comando de início para o agente",
+      "Criar os endpoints de abertura do exame, de envio de arquivos e de resultado de comando",
+      "Área Cliente: pedir a consulta de pacientes ao agente, com os campos de Parâmetro e de Filtro",
+      "Área Cliente: mostrar a lista de pacientes com as colunas devolvidas pelo SQL de consulta",
+      "Área Cliente: tela de conferência com os PDFs e imagens do exame",
+      "Área Cliente: escolher o paciente e os arquivos e preencher as Informações Complementares",
+      "Área Cliente: pedir o usuário e a senha do Tasy na confirmação, sem guardar a senha",
+      "Criar o comando de gravação para o agente e mostrar o resultado de cada laudo",
+      "Criar o endpoint de comandos pendentes (consulta periódica)",
+      "Área Cliente: lista de exames com o estado de cada um",
+      "Área Cliente: estado dos equipamentos (online, offline) e do exame em andamento"
+    ],
+    items: [
+      "Receber do painel o comando de início do exame (um exame por vez)",
+      "Criar a pasta temporária do ciclo: <pasta base>/capturas/<nome do exame>/<timestamp>",
+      "Gravar na pasta temporária os PDFs da impressora Yantra Printer",
+      "Enviar cada arquivo capturado para a API, com fila offline e reenvio automático",
+      "Mostrar uma notificação quando o arquivo está disponível no painel. O clique abre o exame no navegador",
+      "Executar o SQL de consulta no Oracle e devolver as linhas de pacientes ao painel",
+      "Executar o SQL de autenticação com o usuário e a senha do Tasy enviados no comando de gravação",
+      "Copiar cada PDF para a pasta final: <PASTA>\\<PACIENTE>-<NASCIMENTO>\\aaaa\\mm\\dd\\<Exame>-<ATENDIMENTO>-<n>.pdf",
+      "Copiar com a conta do computador no domínio. Fora de domínio, usar a credencial de rede dos parâmetros",
+      "Executar para cada PDF os SQLs de gravação (com a sequence), de imagem e de atualização",
+      "Usar variáveis de ligação (bind) para todo valor que vem do operador ou do paciente, sem substituição de texto",
+      "Devolver ao painel o resultado: caminhos finais, ids dos laudos e erros de cada SQL",
+      "Criar o item Forçar sincronização: reenviar a fila de arquivos e consultar os comandos na hora",
+      "Mostrar o estado do ciclo atual no ícone da bandeja e iniciar um ciclo novo no fim",
+      "Fazer o teste de ponta a ponta no Tasy de homologação e num file server"
+    ] },
+  { id: "e7", code: "E7", name: "Captura de tela", apiDays: 2, days: 6, release: "v2.1",
+    goal: "Capturar a janela principal do usuário com uma combinação de teclas que o usuário escolhe (sistema YO SRC).",
+    endpoints: "<code>POST /exams/{id}/files</code> (o mesmo endpoint da E6)",
+    apiItems: [
+      "Mostrar as imagens na conferência do exame, ao lado dos PDFs",
+      "Guardar a combinação de teclas de cada equipamento"
+    ],
+    items: [
+      "Criar o assistente da combinação de teclas, com a sugestão Ctrl + Y e o aviso de conflito com \"Refazer\"",
+      "Testar se a combinação está livre e pedir outra quando o Windows recusa",
+      "Registrar a combinação de teclas global na sessão de cada usuário",
+      "Capturar só a janela ativa do usuário",
+      "Gravar a captura em PNG na pasta temporária do ciclo",
+      "Tratar vários monitores e escalas de DPI diferentes",
+      "Testar no Windows 10 e no Windows 11"
+    ] },
+  { id: "e8", code: "E8", name: "Captura de dados pela porta serial", apiDays: 5, days: 10, release: "v2.2",
+    goal: "Ler a porta serial do equipamento de exame e extrair os dados com regras regex do administrativo (sistema YO HUB).",
+    endpoints: "<code>POST /agents/{id}/serial-config</code> e <code>POST /exams/{id}/data</code>",
+    apiItems: [
+      "Criar o cadastro de regras regex por exame",
+      "Criar a tela de teste: colar um conteúdo recebido e ver o resultado de cada regra",
+      "Enviar as regras ao agente junto com os parâmetros",
+      "Receber e mostrar os dados extraídos no exame"
+    ],
+    items: [
+      "Listar as portas COM do computador, com o nome e o fabricante de cada adaptador",
+      "Criar o assistente da porta COM: comparar as portas antes e depois de conectar o cabo",
+      "Testar a comunicação no assistente: escutar a porta e mostrar os dados recebidos",
+      "Ler a porta serial em 9600 bps, 8 bits de dados, 1 bit de parada e sem paridade",
+      "Aplicar as regras regex ao conteúdo recebido (motor RE2, sem risco de travamento)",
+      "Gravar o conteúdo bruto e os dados extraídos na pasta temporária e enviar para a API",
+      "Testar com os equipamentos reais disponíveis"
+    ] },
+  { id: "e9", code: "E9", name: "Testes finais e implantação", apiDays: 4, days: 5,
+    goal: "Validar o sistema completo e publicar para todos os equipamentos.",
+    endpoints: "Ambiente de produção na AWS (sa-east-1)",
+    apiItems: [
+      "Preparar o ambiente de produção: servidor, banco de dados, bucket S3 com a regra de ciclo de vida, HTTPS e cópias de segurança",
+      "Configurar o monitoramento e os alertas da API",
+      "Revisar a segurança da API e do administrativo"
+    ],
+    items: [
+      "Testar falhas de rede e a fila offline com volume alto",
+      "Revisar a segurança do agente: tokens, TLS e permissões das pastas",
+      "Fazer o piloto em equipamentos reais de clientes",
+      "Escrever a documentação de instalação, de implantação e de suporte",
+      "Publicar a versão final para todos os agentes"
+    ] }
+];
+
+/* ---------- datas ---------- */
+const iso = d => d.toISOString().slice(0, 10);
+const parse = s => new Date(s + "T00:00:00Z");
+const isWork = d => { const w = d.getUTCDay(); return w !== 0 && w !== 6 && !HOLIDAYS.has(iso(d)); };
+const nextDay = d => new Date(d.getTime() + 86400000);
+const nextWork = d => { let x = d; while (!isWork(x)) x = nextDay(x); return x; };
+const addWork = (start, n) => { let end = start, left = n - 1; while (left > 0) { end = nextDay(end); if (isWork(end)) left--; } return end; };
+const fmt = d => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const fmtLong = d => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).replace(".", "");
+
+(function schedule() {
+  let cur = nextWork(parse(START));
+  for (const s of STAGES) {
+    s.start = cur;
+    s.apiEnd = addWork(cur, s.apiDays);
+    s.agentStart = s.days ? nextWork(nextDay(s.apiEnd)) : null;
+    s.end = s.days ? addWork(s.agentStart, s.days) : s.apiEnd;
+    cur = nextWork(nextDay(s.end));
+  }
+})();
+
+const API_DAYS = STAGES.reduce((a, s) => a + s.apiDays, 0);
+const AGENT_DAYS = STAGES.reduce((a, s) => a + s.days, 0);
+const allIds = s => [...s.apiItems.map((_, i) => `${s.id}-a${i}`), ...s.items.map((_, i) => `${s.id}-${i}`)];
+const TOTAL_ITEMS = STAGES.reduce((a, s) => a + allIds(s).length, 0);
+const checks = {}; // id -> boolean
+
+/* ---------- resumo ---------- */
+function renderSummary() {
+  const done = STAGES.reduce((a, s) => a + allIds(s).filter(id => checks[id]).length, 0);
+  const pct = Math.round(done / TOTAL_ITEMS * 100);
+  const mvp = STAGES.find(s => s.id === "e6");
+  const rows = [
+    ["Início", fmtLong(STAGES[0].start), ""],
+    ["MVP v2.0", fmtLong(mvp.end), ""],
+    ["Fim previsto", fmtLong(STAGES[STAGES.length - 1].end), ""],
+    ["Esforço", API_DAYS + AGENT_DAYS, ` dias úteis · ${API_DAYS} adm. + ${AGENT_DAYS} agente`],
+    ["Progresso", pct + "%", ` · ${done}/${TOTAL_ITEMS} itens`]
+  ];
+  document.getElementById("summary").innerHTML = rows.map(([k, v, s]) =>
+    `<div><dt>${k}</dt><dd>${v}${s ? `<small>${s}</small>` : ""}</dd></div>`).join("");
+}
+
+/* ---------- Gantt ---------- */
+function stageProgress(s) {
+  const ids = allIds(s);
+  const n = ids.filter(id => checks[id]).length;
+  return { n, total: ids.length, ratio: n / ids.length };
+}
+function renderGantt() {
+  const cs = getComputedStyle(document.documentElement);
+  const c = n => cs.getPropertyValue(n).trim();
+  const first = STAGES[0].start, last = STAGES[STAGES.length - 1].end;
+  // Começa na segunda-feira da primeira semana.
+  const gStart = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 86400000);
+  const span = Math.ceil((last - gStart) / 86400000) + 10;
+  const PX = 6, LABEL = 230, ROW = 34, TOP = 48, PAD_R = 24;
+  const W = LABEL + span * PX + PAD_R, H = TOP + STAGES.length * ROW + 40;
+  const x = d => LABEL + ((d - gStart) / 86400000) * PX;
+  let g = "";
+  // papel de ECG: linha fina por dia, linha forte por semana
+  for (let i = 0; i <= span; i++) {
+    const d = new Date(gStart.getTime() + i * 86400000);
+    const X = LABEL + i * PX, major = d.getUTCDay() === 1;
+    if (!isWork(d) && d.getUTCDay() !== 0 && d.getUTCDay() !== 6) // feriado
+      g += `<rect x="${X}" y="${TOP - 8}" width="${PX}" height="${H - TOP - 24}" fill="${c("--trace-soft")}"/>`;
+    g += `<line x1="${X}" y1="${TOP - 8}" x2="${X}" y2="${H - 32}" stroke="${major ? c("--grid-major") : c("--grid-minor")}" stroke-width="1"/>`;
+    if (major && (Math.round(i / 7) % 2 === 0)) g += `<text x="${X + 2}" y="${TOP - 14}" font-size="10" font-family="IBM Plex Mono, monospace" fill="${c("--muted")}">${fmt(d)}</text>`;
+    if (d.getUTCDate() === 1) {
+      const m = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+      g += `<text x="${X + 2}" y="16" font-size="12" font-weight="600" font-family="IBM Plex Sans, sans-serif" fill="${c("--ink")}">${m}</text>`;
+    }
+  }
+  for (let r = 0; r <= STAGES.length; r++) {
+    const Y = TOP + r * ROW - 4;
+    g += `<line x1="${LABEL}" y1="${Y}" x2="${W - PAD_R}" y2="${Y}" stroke="${c("--grid-minor")}"/>`;
+  }
+  STAGES.forEach((s, r) => {
+    const Y = TOP + r * ROW;
+    const a1 = x(s.start), a2 = x(s.apiEnd) + PX;
+    const b1 = s.days ? x(s.agentStart) : a2, b2 = x(s.end) + PX;
+    const p = stageProgress(s);
+    g += `<text x="12" y="${Y + 17}" font-size="12" font-family="IBM Plex Mono, monospace" fill="${c("--trace")}">${s.code}</text>`;
+    g += `<text x="40" y="${Y + 17}" font-size="13" font-family="IBM Plex Sans, sans-serif" fill="${c("--ink")}">${s.name.length > 27 ? s.name.slice(0, 26) + "…" : s.name}<title>${s.name}</title></text>`;
+    g += `<rect x="${a1}" y="${Y + 4}" width="${a2 - a1}" height="18" fill="${c("--api")}"><title>${s.code} administrativo: ${fmt(s.start)}–${fmt(s.apiEnd)} (${s.apiDays} dias úteis)</title></rect>`;
+    if (s.days) g += `<rect x="${b1}" y="${Y + 4}" width="${b2 - b1}" height="18" fill="${c("--bar")}"><title>${s.code} agente: ${fmt(s.agentStart)}–${fmt(s.end)} (${s.days} dias úteis)</title></rect>`;
+    if (p.n) g += `<rect x="${a1}" y="${Y + 19}" width="${(b2 - a1) * p.ratio}" height="3" fill="${c("--bar-done")}"/>`;
+    g += `<text x="${b2 + 6}" y="${Y + 17}" font-size="11" font-family="IBM Plex Mono, monospace" fill="${c("--muted")}">${s.apiDays}+${s.days}d</text>`;
+    if (s.release) {
+      const mx = b2, my = Y + 13;
+      g += `<path d="M${mx} ${my - 8} L${mx + 8} ${my} L${mx} ${my + 8} L${mx - 8} ${my}Z" fill="${c("--trace")}"><title>${s.release}: ${fmt(s.end)}</title></path>`;
+      g += `<text x="${mx + 44}" y="${my + 4}" font-size="11" font-weight="600" font-family="IBM Plex Mono, monospace" fill="${c("--trace")}">${s.release}</text>`;
+    }
+  });
+  const today = parse(TODAY);
+  if (today >= gStart) {
+    const X = x(today);
+    g += `<line x1="${X}" y1="${TOP - 8}" x2="${X}" y2="${H - 32}" stroke="${c("--ink")}" stroke-dasharray="3 3"/>`;
+  }
+  g += `<text x="${LABEL}" y="${H - 12}" font-size="11" font-family="IBM Plex Sans, sans-serif" fill="${c("--muted")}">Linhas fortes: início de cada semana. Faixas rosadas: feriados. Traço verde sob a barra: itens concluídos da etapa.</text>`;
+  document.getElementById("gantt").innerHTML =
+    `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico de Gantt">${g}</svg>`;
+}
+
+/* ---------- etapas ---------- */
+let db = null, canWrite = true;
+const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const checkList = list => `<ul class="checks">${list.map(([id, t]) =>
+  `<li><label for="c-${id}"><input type="checkbox" id="c-${id}" data-id="${id}" ${checks[id] ? "checked" : ""} ${canWrite ? "" : "disabled"}><span>${esc(t)}</span></label></li>`).join("")}</ul>`;
+function renderStages() {
+  document.getElementById("stages").innerHTML = STAGES.map(s => {
+    const p = stageProgress(s);
+    return `<article class="stage" id="${s.id}">
+      <div class="stage-head">
+        <span class="code">${s.code} · ${s.apiDays + s.days} dias úteis</span>
+        <h3>${s.name}</h3>
+        <span class="dates">${fmt(s.start)} → ${fmt(s.end)}</span>
+        <span class="split">Adm. ${s.apiDays}d · Agente ${s.days}d</span>
+        ${s.release ? `<span class="tag">${s.release}</span>` : ""}
+        <div class="meter" aria-hidden="true"><i style="width:${p.ratio * 100}%"></i></div>
+        <span class="meter-label">${p.n}/${p.total} itens concluídos</span>
+      </div>
+      <div class="stage-body">
+        <p class="goal">${esc(s.goal)}</p>
+        <div class="track">
+          <h4 class="api">Administrativo · ${fmt(s.start)} → ${fmt(s.apiEnd)}</h4>
+          <span class="endpoints">${s.endpoints}</span>
+          ${checkList(s.apiItems.map((t, i) => [`${s.id}-a${i}`, t]))}
+        </div>
+        ${s.days ? `<div class="track">
+          <h4 class="agent">Agente · ${fmt(s.agentStart)} → ${fmt(s.end)}</h4>
+          ${checkList(s.items.map((t, i) => [`${s.id}-${i}`, t]))}
+        </div>` : ""}
+      </div>
+    </article>`;
+  }).join("");
+}
+function renderAll() { renderSummary(); renderGantt(); renderStages(); }
+
+function setStatus(text, err) {
+  const el = document.getElementById("db-status");
+  el.textContent = text; el.classList.toggle("err", !!err);
+}
+
+document.getElementById("stages").addEventListener("change", async e => {
+  const box = e.target.closest("input[data-id]");
+  if (!box) return;
+  const id = box.dataset.id, value = box.checked;
+  checks[id] = value;
+  renderSummary(); renderGantt();
+  const s = STAGES.find(st => id.startsWith(st.id + "-"));
+  const art = document.getElementById(s.id), p = stageProgress(s);
+  art.querySelector(".meter i").style.width = p.ratio * 100 + "%";
+  art.querySelector(".meter-label").textContent = `${p.n}/${p.total} itens concluídos`;
+  if (!db) return;
+  try {
+    await db.doc("checks/" + id).set({ done: value, at: new Date().toISOString() });
+  } catch (err) {
+    if (err && err.code === "invalid_argument") {
+      canWrite = false; renderStages();
+      setStatus("Você só pode ver este plano. O dono do plano marca os itens.", true);
+    } else {
+      setStatus("O item não foi salvo. Verifique a conexão e marque o item de novo.", true);
+    }
+  }
+});
+
+renderAll();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderGantt);
+new MutationObserver(renderGantt).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+(async () => {
+  try {
+    db = window.claude && await window.claude.use("db");
+  } catch { db = null; }
+  if (!db) {
+    setStatus("O progresso não fica salvo nesta visualização. Abra o plano no claude.ai para salvar as marcações.");
+    return;
+  }
+  setStatus("O progresso fica salvo e aparece para todos que abrem este plano.");
+  db.collection("checks").onSnapshot(snap => {
+    for (const k of Object.keys(checks)) delete checks[k];
+    snap.docs.forEach(d => { if (d.exists) checks[d.id] = !!d.data().done; });
+    renderAll();
+  }, () => setStatus("A conexão com o progresso salvo caiu. Recarregue a página.", true));
+})();
+</script>
+
+
+</body></html>

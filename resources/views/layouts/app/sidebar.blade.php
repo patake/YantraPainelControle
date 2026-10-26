@@ -19,6 +19,9 @@
                         <flux:sidebar.item icon="building-office-2" :href="route('staff.clients.index')" :current="request()->routeIs('staff.clients.*')" wire:navigate>
                             {{ __('Clientes') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="computer-desktop" :href="route('staff.devices.index')" :current="request()->routeIs('staff.devices.*')" :badge="App\Models\Device::where('status', App\Enums\DeviceStatus::Trial)->count() ?: null" wire:navigate>
+                            {{ __('Equipamentos') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="users" :href="route('staff.users.index')" :current="request()->routeIs('staff.users.*')" wire:navigate>
                             {{ __('Usuários') }}
                         </flux:sidebar.item>
