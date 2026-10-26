@@ -1,5 +1,5 @@
-# Ambiente local do administrativo: PHP-FPM (app), filas (queue), nginx (web) e PostgreSQL (db).
-# Painel: http://localhost:8000. Banco: localhost:5432.
+# Ambiente local do administrativo: PHP-FPM (app), filas (queue), nginx (web), PostgreSQL (db) e S3 (s3).
+# Painel: http://localhost:8000. Banco: localhost:5432. S3: http://localhost.localstack.cloud:4566.
 services:
   app:
     build: ./docker/php
@@ -8,6 +8,8 @@ services:
       - ./:/var/www/html
     depends_on:
       db:
+        condition: service_healthy
+      s3:
         condition: service_healthy
 
   queue:
@@ -45,6 +47,29 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # S3 local (LocalStack). O MinIO não publica mais imagens Docker.
+  # O nome localhost.localstack.cloud aponta para 127.0.0.1 no computador e para este
+  # container na rede do Docker. Assim, as URLs assinadas funcionam nos dois lados.
+  s3:
+    image: localstack/localstack:4.9
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-sa-east-1}
+      S3_BUCKET: ${AWS_BUCKET:-yantra-painel}
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./docker/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
+    networks:
+      default:
+        aliases:
+          - localhost.localstack.cloud
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3api head-bucket --bucket $${S3_BUCKET}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
 volumes:
   pgdata:
