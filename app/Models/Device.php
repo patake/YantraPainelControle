@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DeviceStatus;
 use App\Enums\ReleaseChannel;
+use App\Enums\SystemFeature;
 use App\Exceptions\LicenseUnavailableException;
 use App\Models\Concerns\Auditable;
 use Database\Factories\DeviceFactory;
@@ -80,6 +81,14 @@ class Device extends Model implements AuthenticatableContract, AuthorizableContr
     public function decidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decided_by');
+    }
+
+    /**
+     * Equipamento do sistema de captura de tela (YO SRC). Só ele usa a combinação de teclas (R-EXA-11).
+     */
+    public function capturesScreen(): bool
+    {
+        return $this->system?->feature === SystemFeature::Screen;
     }
 
     /**

@@ -92,6 +92,12 @@ case "$cmd" in
   fresh)
     $EXEC app php artisan migrate:fresh --seed
     ;;
+  clock)
+    # O codigo do 2FA (TOTP) depende da hora. Com o relogio errado, nenhum codigo do celular vale.
+    echo "Internet : $(curl -sI https://www.google.com | grep -i '^date:' | cut -d' ' -f2- | tr -d '\r')"
+    echo "Container: $($COMPOSE exec -T app date -u '+%a, %d %b %Y %H:%M:%S GMT')"
+    echo "Se a diferenca passa de 30 segundos, sincronize o relogio do Windows e rode: ./dev restart"
+    ;;
   opcache)
     # Recarrega o php-fpm (SIGUSR2) para limpar o OPcache.
     $COMPOSE kill -s SIGUSR2 app && echo "OPcache do app recarregado."
@@ -127,7 +133,8 @@ Banco de dados:
   migrate         Executa as migrations
   fresh           Recria o banco com os dados de exemplo (apaga todos os dados)
 
-Performance:
+Diagnostico:
+  clock           Compara a hora do container com a hora da internet (2FA)
   opcache         Recarrega o OPcache do php-fpm
 
 Qualquer outro comando vai direto para o docker compose (ex.: ./dev exec app php -v).

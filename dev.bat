@@ -30,6 +30,7 @@ IF "%~1"=="assets"   GOTO assets
 IF "%~1"=="psql"     GOTO psql
 IF "%~1"=="migrate"  GOTO migrate
 IF "%~1"=="fresh"    GOTO fresh
+IF "%~1"=="clock"    GOTO clock
 IF "%~1"=="opcache"  GOTO opcache
 IF "%~1"=="help"     GOTO help
 
@@ -111,6 +112,13 @@ GOTO end
 %COMPOSE% exec app php artisan migrate:fresh --seed
 GOTO end
 
+:clock
+:: O codigo do 2FA (TOTP) depende da hora. Com o relogio errado, nenhum codigo do celular vale.
+curl -sI https://www.google.com | findstr /B /I "date:"
+%COMPOSE% exec -T app date -u "+Container: %%a, %%d %%b %%Y %%H:%%M:%%S GMT"
+echo Se a diferenca passa de 30 segundos, sincronize o relogio do Windows e rode: dev restart
+GOTO end
+
 :opcache
 %COMPOSE% kill -s SIGUSR2 app
 echo OPcache do app recarregado.
@@ -146,7 +154,8 @@ echo   psql [args]     Abre o psql no banco yantra_painel
 echo   migrate         Executa as migrations
 echo   fresh           Recria o banco com os dados de exemplo (apaga todos os dados)
 echo.
-echo Performance:
+echo Diagnostico:
+echo   clock           Compara a hora do container com a hora da internet (2FA)
 echo   opcache         Recarrega o OPcache do php-fpm
 echo.
 echo Qualquer outro comando vai direto para o docker compose (ex.: dev exec app php -v).

@@ -318,6 +318,8 @@ paths:
         O assistente do agente testa a combinação no Windows e envia a combinação aceita (E7).
         A combinação tem Ctrl, Alt ou Win e uma tecla: letra, número, F1 a F12 ou PrintScreen (R-EXA-11).
         O painel grava a combinação no formato canônico (por exemplo, "Ctrl+Shift+Y") e aumenta a versão dos parâmetros.
+        Só o sistema de captura de tela (YO SRC) usa a combinação. Sem combinação gravada, os parâmetros trazem Ctrl+Y.
+        Nos outros sistemas, os parâmetros trazem hotkey null.
       operationId: putHotkey
       x-yantra-stage: E7
       x-yantra-status: implemented
@@ -343,6 +345,11 @@ paths:
                   config_version: { type: integer, example: 8 }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: O sistema do equipamento não usa a captura de tela.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
   /exams/{exam}/data:

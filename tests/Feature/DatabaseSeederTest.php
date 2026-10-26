@@ -19,8 +19,8 @@ class DatabaseSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(['YC_PRT', 'YO_HUB', 'YO_PRT', 'YO_SRC'], System::orderBy('code')->pluck('code')->all());
-        $this->assertSame(3, User::count());
-        $this->assertSame(2, Device::usingLicense()->count());
+        $this->assertSame(4, User::count());
+        $this->assertSame(3, Device::usingLicense()->count());
     }
 
     public function test_system_seeder_can_run_twice(): void

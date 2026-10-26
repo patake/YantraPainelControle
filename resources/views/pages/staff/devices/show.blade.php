@@ -60,7 +60,7 @@ new class extends Component {
             'captureBasePath' => ['required', 'string', 'max:255'],
             'networkUsername' => ['nullable', 'string', 'max:255'],
             'networkPassword' => ['nullable', 'string', 'max:255'],
-            'hotkey' => ['required', 'string', 'max:40', new ValidHotkey],
+            'hotkey' => $this->device->capturesScreen() ? ['required', 'string', 'max:40', new ValidHotkey] : ['nullable'],
             'serialPort' => ['nullable', 'string', 'max:20', 'regex:/^COM\d{1,3}$/i'],
             'examTypeIds' => ['array'],
             'examTypeIds.*' => ['integer', 'in:'.$this->availableExams->pluck('id')->join(',')],
@@ -76,7 +76,8 @@ new class extends Component {
         $settings->fill([
             'capture_base_path' => $this->captureBasePath,
             'network_username' => $this->networkUsername !== '' ? $this->networkUsername : null,
-            'hotkey' => Hotkey::normalize($this->hotkey),
+            // Só o sistema de captura de tela (YO SRC) usa a combinação de teclas (R-EXA-11).
+            'hotkey' => $this->device->capturesScreen() ? Hotkey::normalize($this->hotkey) : null,
             'serial_port' => $this->serialPort !== '' ? strtoupper($this->serialPort) : null,
         ]);
 
@@ -147,7 +148,9 @@ new class extends Component {
                 </div>
                 <flux:input wire:model="networkUsername" :label="__('Usuário de rede (fora de domínio)')" :description="__('Em domínio, o agente copia com a conta do computador.')" />
                 <flux:input wire:model="networkPassword" type="password" :label="__('Senha de rede')" :placeholder="$this->device->settings?->network_password ? __('Gravada. Digite para trocar.') : ''" autocomplete="new-password" />
-                <flux:input wire:model="hotkey" :label="__('Teclas da captura de tela')" placeholder="Ctrl+Y" :description="__('O padrão é Ctrl+Y. Use Ctrl, Alt ou Win e uma tecla: letra, número, F1 a F12 ou PrintScreen.')" />
+                @if ($this->device->capturesScreen())
+                    <flux:input wire:model="hotkey" :label="__('Teclas da captura de tela')" placeholder="Ctrl+Y" :description="__('O padrão é Ctrl+Y. O gestor do hospital também troca a combinação. Use Ctrl, Alt ou Win e uma tecla: letra, número, F1 a F12 ou PrintScreen.')" />
+                @endif
                 <flux:input wire:model="serialPort" :label="__('Porta serial')" placeholder="COM3" />
             </flux:card>
 

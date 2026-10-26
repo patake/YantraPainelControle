@@ -37,6 +37,7 @@ final class DeviceConfig
     public static function for(Device $device): array
     {
         $device->loadMissing([
+            'system',
             'settings',
             'client.erpConnection',
             'examTypes' => fn ($query) => $query->where('active', true)->with(['fields', 'serialRules'])->orderBy('name'),
@@ -52,7 +53,8 @@ final class DeviceConfig
                 'username' => $settings->network_username,
                 'password' => $settings->network_password,
             ] : null,
-            'hotkey' => $settings?->hotkey ?? Hotkey::DEFAULT,
+            // Só o sistema de captura de tela (YO SRC) usa a combinação de teclas (R-EXA-11).
+            'hotkey' => $device->capturesScreen() ? ($settings?->hotkey ?? Hotkey::DEFAULT) : null,
             'serial_port' => $settings?->serial_port,
             'erp_connection' => $connection ? [
                 'db_type' => $connection->db_type->value,

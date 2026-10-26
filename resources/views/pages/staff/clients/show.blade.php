@@ -47,12 +47,12 @@ new class extends Component {
     }
 
     /**
-     * Operadores que ainda não têm vínculo com este cliente.
+     * Operadores e gestores que ainda não têm vínculo com este cliente.
      */
     #[Computed]
     public function availableOperators()
     {
-        return User::where('role', UserRole::Operator)
+        return User::whereIn('role', [UserRole::Operator, UserRole::Manager])
             ->whereDoesntHave('clients', fn ($query) => $query->whereKey($this->clientId))
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
@@ -80,7 +80,7 @@ new class extends Component {
             ['operatorToLink' => __('operador')],
         );
 
-        $operator = User::where('role', UserRole::Operator)->findOrFail($this->operatorToLink);
+        $operator = User::whereIn('role', [UserRole::Operator, UserRole::Manager])->findOrFail($this->operatorToLink);
         $this->syncOperator($operator, attach: true);
 
         $this->reset('operatorToLink');
@@ -345,7 +345,7 @@ new class extends Component {
             @can('update', $this->client)
                 <form wire:submit="linkOperator" class="flex flex-wrap items-end gap-3">
                     <div class="min-w-72 flex-1">
-                        <flux:select wire:model="operatorToLink" :label="__('Vincular um operador')" :placeholder="__('Escolha o operador')">
+                        <flux:select wire:model="operatorToLink" :label="__('Vincular um operador ou gestor')" :placeholder="__('Escolha o usuário')">
                             @foreach ($this->availableOperators as $operator)
                                 <flux:select.option :value="$operator->id">{{ $operator->name }} · {{ $operator->email }}</flux:select.option>
                             @endforeach
@@ -379,7 +379,7 @@ new class extends Component {
                             <flux:table.cell class="tabular-nums">{{ $user->last_login_at?->format('d/m/Y H:i') ?? __('Nunca') }}</flux:table.cell>
                             <flux:table.cell align="end">
                                 @can('update', $this->client)
-                                    <flux:button size="sm" variant="ghost" wire:click="unlinkOperator({{ $user->id }})" wire:confirm="{{ __('Remover o vínculo deste operador?') }}">{{ __('Remover vínculo') }}</flux:button>
+                                    <flux:button size="sm" variant="ghost" wire:click="unlinkOperator({{ $user->id }})" wire:confirm="{{ __('Remover o vínculo deste usuário?') }}">{{ __('Remover vínculo') }}</flux:button>
                                 @endcan
                             </flux:table.cell>
                         </flux:table.row>

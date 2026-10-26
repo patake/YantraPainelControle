@@ -20,7 +20,7 @@ class HotkeyControllerTest extends TestCase
 
     public function test_stores_the_normalized_combination_and_raises_the_parameter_version(): void
     {
-        $device = Device::factory()->active()->create();
+        $device = Device::factory()->active()->screenCapture()->create();
         $version = $device->config_version;
 
         $response = $this->withToken($this->tokenFor($device))
@@ -40,7 +40,7 @@ class HotkeyControllerTest extends TestCase
 
     public function test_parameters_bring_ctrl_y_when_the_device_has_no_combination(): void
     {
-        $device = Device::factory()->active()->create();
+        $device = Device::factory()->active()->screenCapture()->create();
 
         $this->withToken($this->tokenFor($device))
             ->getJson(route('agent.config'))
@@ -49,7 +49,7 @@ class HotkeyControllerTest extends TestCase
 
     public function test_rejects_a_combination_without_ctrl_alt_or_win(): void
     {
-        $device = Device::factory()->active()->create();
+        $device = Device::factory()->active()->screenCapture()->create();
 
         $this->withToken($this->tokenFor($device))
             ->putJson(route('agent.settings.hotkey'), ['hotkey' => 'Shift+Y'])
@@ -57,9 +57,22 @@ class HotkeyControllerTest extends TestCase
             ->assertJsonValidationErrors('hotkey');
     }
 
+    public function test_only_the_screen_capture_system_uses_the_combination(): void
+    {
+        $printer = Device::factory()->active()->create();
+
+        $this->withToken($this->tokenFor($printer))
+            ->putJson(route('agent.settings.hotkey'), ['hotkey' => 'Ctrl+Y'])
+            ->assertConflict();
+
+        $this->withToken($this->tokenFor($printer))
+            ->getJson(route('agent.config'))
+            ->assertJsonPath('hotkey', null);
+    }
+
     public function test_blocked_device_cannot_change_the_combination(): void
     {
-        $device = Device::factory()->blocked()->create();
+        $device = Device::factory()->blocked()->screenCapture()->create();
 
         $this->withToken($this->tokenFor($device))
             ->putJson(route('agent.settings.hotkey'), ['hotkey' => 'Ctrl+Y'])

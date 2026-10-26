@@ -50,6 +50,13 @@
                             {{ __('Histórico') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
+                    @if (auth()->user()->isManager())
+                        <flux:sidebar.group :heading="__('Gestão')" class="grid">
+                            <flux:sidebar.item icon="cog-6-tooth" :href="route('app.settings')" :current="request()->routeIs('app.settings')" wire:navigate>
+                                {{ __('Configurações') }}
+                            </flux:sidebar.item>
+                        </flux:sidebar.group>
+                    @endif
                 @endif
             </flux:sidebar.nav>
 

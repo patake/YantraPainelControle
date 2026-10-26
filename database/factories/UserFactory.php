@@ -73,6 +73,16 @@ class UserFactory extends Factory
         ])->hasAttached(Client::factory());
     }
 
+    /**
+     * Gestor do hospital vinculado a um cliente ativo (R-ACE-14).
+     */
+    public function managerWithClient(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Manager,
+        ])->hasAttached(Client::factory());
+    }
+
     public function inactive(): static
     {
         return $this->state(fn (array $attributes) => [

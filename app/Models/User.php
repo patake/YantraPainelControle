@@ -62,6 +62,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Gestor do hospital: usa a área Cliente e personaliza as teclas da captura de tela (R-ACE-14).
+     */
+    public function isManager(): bool
+    {
+        return $this->role === UserRole::Manager;
+    }
+
+    /**
      * Usuário ativo. O operador também precisa de um cliente ativo (R-ACE-6).
      */
     public function canSignIn(): bool

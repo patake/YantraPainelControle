@@ -42,12 +42,15 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
         Route::livewire('auditoria/requisicoes', 'pages::staff.logs.requests')->name('logs.requests');
     });
 
-    // Área Cliente: operador.
-    Route::prefix('app')->name('app.')->middleware('role:operator')->group(function () {
+    // Área Cliente: operador e gestor do hospital (R-ACE-14).
+    Route::prefix('app')->name('app.')->middleware('role:operator,manager')->group(function () {
         Route::livewire('/', 'pages::app.dashboard')->name('dashboard');
         Route::livewire('exames', 'pages::app.exams.index')->name('exams.index');
         Route::livewire('exames/novo', 'pages::app.exams.create')->name('exams.create');
         Route::livewire('exames/{exam}', 'pages::app.exams.show')->name('exams.show');
+
+        // Configuração do gestor: teclas da captura de tela dos equipamentos YO SRC (R-EXA-11).
+        Route::livewire('configuracoes', 'pages::app.settings')->middleware('role:manager')->name('settings');
     });
 });
 

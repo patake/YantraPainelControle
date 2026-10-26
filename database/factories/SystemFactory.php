@@ -25,4 +25,15 @@ class SystemFactory extends Factory
             'branding' => ['color' => '#b8323a'],
         ];
     }
+
+    /**
+     * Sistema de captura de tela, como o YO SRC.
+     */
+    public function screen(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'code' => 'T'.fake()->unique()->numerify('###').'_SRC',
+            'feature' => SystemFeature::Screen,
+        ]);
+    }
 }

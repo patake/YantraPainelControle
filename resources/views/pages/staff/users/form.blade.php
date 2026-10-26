@@ -58,7 +58,7 @@ new class extends Component {
             'role' => ['required', Rule::enum(UserRole::class)],
             'active' => ['boolean'],
             // O operador precisa de pelo menos um cliente (R-ACE-2).
-            'clientIds' => [Rule::requiredIf($this->role === UserRole::Operator->value), 'array'],
+            'clientIds' => [Rule::requiredIf(UserRole::tryFrom($this->role)?->isClientUser() ?? false), 'array'],
             'clientIds.*' => ['integer', 'exists:clients,id'],
         ];
     }
@@ -97,7 +97,7 @@ new class extends Component {
         }
 
         $user->save();
-        $this->syncClients($user, $validated['role'] === UserRole::Operator->value ? $validated['clientIds'] : []);
+        $this->syncClients($user, UserRole::from($validated['role'])->isClientUser() ? $validated['clientIds'] : []);
 
         if ($isNew) {
             app(SendUserInvitation::class)->handle($user);
@@ -156,8 +156,8 @@ new class extends Component {
         @if ($role === App\Enums\UserRole::Operator->value)
             <flux:card class="flex flex-col gap-4">
                 <div>
-                    <flux:heading>{{ __('Clientes do operador') }}</flux:heading>
-                    <flux:text>{{ __('O operador vê só os dados dos clientes marcados.') }}</flux:text>
+                    <flux:heading>{{ __('Clientes do usuário') }}</flux:heading>
+                    <flux:text>{{ __('O operador e o gestor veem só os dados dos clientes marcados.') }}</flux:text>
                 </div>
                 <flux:checkbox.group wire:model="clientIds" class="grid gap-2 sm:grid-cols-2">
                     @foreach ($this->clients as $client)

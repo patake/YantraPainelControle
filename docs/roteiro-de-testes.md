@@ -39,6 +39,7 @@ Usuários de exemplo, todos com a senha `password`:
 | `admin@weega.com.br` | Administrador |
 | `suporte@weega.com.br` | Suporte |
 | `operador@hospital-exemplo.com.br` | Operador do Hospital Exemplo Norte |
+| `gestor@hospital-exemplo.com.br` | Gestor do Hospital Exemplo Norte |
 
 Endereços:
 
@@ -63,7 +64,7 @@ Endereços:
 1. Abra <http://localhost:8000> e entre com `admin@weega.com.br` e `password`.
 2. Resultado esperado: o painel abre a tela de Segurança, com o aviso de que o 2FA é obrigatório.
 
-Cuidado: o código do aplicativo depende da hora do celular. Deixe a data e a hora do celular no modo automático. Não saia da tela de Segurança antes de digitar o código: ao voltar para a tela, o painel apaga o cadastro não confirmado, e o QR code lido perde o valor.
+Cuidado: o código do aplicativo depende da hora do celular e da hora do servidor. Deixe a data e a hora do celular e do Windows no modo automático. Antes do teste, rode `./dev clock`: a hora do container e a hora da internet precisam ser iguais. Com 3 horas de diferença, por exemplo, nenhum código vale. Não saia da tela de Segurança antes de digitar o código: ao voltar para a tela, o painel apaga o cadastro não confirmado, e o QR code lido perde o valor.
 
 3. Clique em **Cadastrar o 2FA**, leia o QR code com o aplicativo e digite o código.
 4. Resultado esperado: o painel mostra os códigos de recuperação. Guarde um código para o teste 2.3.
@@ -328,26 +329,54 @@ Cuidado: o comando de início expira em 5 minutos. Depois disso, o resultado rec
 
 ## 8. Captura de tela (E7)
 
-Os comandos abaixo simulam o assistente de teclas do agente. Troque `<token>` pelo token do teste 4.2.
+Os comandos abaixo simulam o assistente de teclas do agente. Só o sistema Yantra Screen Capture (YO SRC) usa a combinação de teclas (R-EXA-11).
 
-### 8.1 Combinação de teclas (R-EXA-11)
+### 8.1 Combinação de teclas pelo agente (R-EXA-11)
 
-1. Grave uma combinação sem Ctrl, Alt ou Win:
+1. Grave uma combinação com o token do SALA-TESTE (teste 4.2), que é do sistema YC_PRT:
    ```
-   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"Shift+Y"}'
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"Ctrl+Y"}'
    ```
-2. Resultado esperado: a resposta é 422. A mensagem pede Ctrl, Alt ou Win e uma tecla.
-3. Grave a combinação em minúsculas:
+2. Resultado esperado: a resposta é 409. O sistema do equipamento não usa a captura de tela.
+3. No cliente do teste 3.1, aba **Licenças**, adicione um pacote do sistema YO_SRC com quantidade 1.
+4. Registre um equipamento YO SRC:
    ```
-   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"shift + ctrl + y"}'
+   curl -s -X POST http://localhost:8000/api/v1/agent/register -H "Accept: application/json" -H "Content-Type: application/json" -d '{"cnpj":"11222333000181","system":"YO_SRC","signature":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","hostname":"RECEPCAO-TESTE"}'
    ```
-4. Resultado esperado: a resposta traz `"hotkey":"Ctrl+Shift+Y"` e a versão nova dos parâmetros.
-5. Abra o equipamento SALA-TESTE em **Equipamentos**.
-6. Resultado esperado: o campo **Teclas da captura de tela** mostra `Ctrl+Shift+Y`.
-7. Consulte os parâmetros (teste 6.2, passo 4).
-8. Resultado esperado: a resposta traz `"hotkey":"Ctrl+Shift+Y"`.
+5. Resultado esperado: a resposta traz o `token`. Nos passos abaixo, troque `<token-src>` por esse token.
+6. Grave uma combinação sem Ctrl, Alt ou Win:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token-src>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"Shift+Y"}'
+   ```
+7. Resultado esperado: a resposta é 422. A mensagem pede Ctrl, Alt ou Win e uma tecla.
+8. Grave a combinação em minúsculas:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token-src>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"shift + ctrl + y"}'
+   ```
+9. Resultado esperado: a resposta traz `"hotkey":"Ctrl+Shift+Y"` e a versão nova dos parâmetros.
+10. Abra o equipamento RECEPCAO-TESTE em **Equipamentos**.
+11. Resultado esperado: o campo **Teclas da captura de tela** mostra `Ctrl+Shift+Y`.
+12. Consulte os parâmetros do SALA-TESTE (teste 6.2, passo 4).
+13. Resultado esperado: a resposta traz `"hotkey":null`.
 
-### 8.2 Captura na conferência
+### 8.2 Teclas pelo gestor do hospital (R-ACE-14)
+
+Só o sistema Yantra Screen Capture (YO SRC) usa a combinação de teclas. O seeder cria o equipamento `RECEPCAO-01` com esse sistema.
+
+1. Entre com `gestor@hospital-exemplo.com.br` e cadastre o 2FA.
+2. Resultado esperado: a área Cliente abre. O menu mostra **Gestão › Configurações**.
+3. Abra **Configurações**.
+4. Resultado esperado: a lista mostra só o `RECEPCAO-01`, com `Ctrl+Y`. Os equipamentos do sistema de impressora (`CARDIO-SALA-02`) não aparecem.
+5. Digite `Shift+Y` e clique em **Salvar**.
+6. Resultado esperado: o painel recusa a combinação.
+7. Digite `alt + f9` e clique em **Salvar**.
+8. Resultado esperado: o painel grava `Alt+F9`.
+9. Entre com `operador@hospital-exemplo.com.br` e abra <http://localhost:8000/app/configuracoes>.
+10. Resultado esperado: o painel mostra o erro 403. O operador não vê o menu **Configurações**.
+11. Como administrador, abra o equipamento `CARDIO-SALA-02` em **Equipamentos**.
+12. Resultado esperado: a parametrização não mostra o campo **Teclas da captura de tela**, porque o sistema não é o YO SRC.
+
+### 8.3 Captura na conferência
 
 1. Inicie um exame e envie um PDF (testes 7.1 e 7.2).
 2. Envie uma imagem PNG como captura de tela. Troque `<exame>` pelo `exam_id`:

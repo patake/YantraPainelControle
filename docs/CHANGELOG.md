@@ -22,7 +22,10 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Captura de tela (E7): rota `PUT /api/v1/agent/settings/hotkey`, em que o assistente do agente grava a combinação de teclas aceita pelo Windows.
 - A combinação de teclas tem Ctrl, Alt ou Win e uma tecla (R-EXA-11). O painel grava a combinação no formato canônico, por exemplo `Ctrl+Shift+Y`.
 - A conferência do exame mostra a captura de tela (PNG) ao lado dos PDFs.
-- A combinação padrão da captura de tela é `Ctrl+Y` (R-EXA-11). O administrador troca a combinação na parametrização do equipamento.
+- A combinação padrão da captura de tela é `Ctrl+Y` (R-EXA-11). Só o sistema Yantra Screen Capture (YO SRC) usa a combinação: nos outros sistemas, os parâmetros trazem `hotkey` null, e a rota `PUT /settings/hotkey` responde 409.
+- Papel **Gestor** (R-ACE-14): usuário do hospital que usa a área Cliente, como o operador. A tela **Configurações** da área Cliente é só do gestor: ele troca a combinação de teclas dos equipamentos YO SRC dos clientes vinculados.
+- O seeder cria o gestor `gestor@hospital-exemplo.com.br` e o equipamento YO SRC `RECEPCAO-01`.
+- Comando `./dev clock`: compara a hora do container com a hora da internet. O código do 2FA depende da hora.
 - Atalhos `dev` (Git Bash) e `dev.bat` (cmd e PowerShell) para os comandos do Docker: `up`, `artisan`, `test`, `pint`, `assets`, `psql`, `fresh` e outros. Veja a lista com `./dev help`.
 - Teste automático do cadastro do 2FA com um código TOTP real.
 

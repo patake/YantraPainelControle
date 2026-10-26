@@ -70,5 +70,27 @@ class DatabaseSeeder extends Seeder
             'hostname' => 'CARDIO-SALA-04',
             'status' => DeviceStatus::Trial,
         ]);
+
+        // Gestor do hospital e um equipamento de captura de tela (YO SRC) para a tela Configurações.
+        $manager = User::factory()->create([
+            'name' => 'Gestor Exemplo',
+            'email' => 'gestor@hospital-exemplo.com.br',
+            'role' => UserRole::Manager,
+        ]);
+        $manager->clients()->attach($client);
+
+        $screen = System::where('code', 'YO_SRC')->firstOrFail();
+
+        License::factory()->create([
+            'client_id' => $client->id,
+            'system_id' => $screen->id,
+            'quantity' => 2,
+        ]);
+
+        Device::factory()->active()->create([
+            'client_id' => $client->id,
+            'system_id' => $screen->id,
+            'hostname' => 'RECEPCAO-01',
+        ]);
     }
 }

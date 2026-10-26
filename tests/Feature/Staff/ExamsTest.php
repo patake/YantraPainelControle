@@ -165,7 +165,7 @@ class ExamsTest extends TestCase
      */
     public function test_admin_saves_the_screen_capture_keys_in_the_canonical_format(): void
     {
-        $device = Device::factory()->active()->create();
+        $device = Device::factory()->active()->screenCapture()->create();
         $this->actingAs($this->admin());
 
         Livewire::test('pages::staff.devices.show', ['device' => $device])

@@ -23,7 +23,7 @@ Telas (Livewire 4 com Flux UI gratuito e Fortify):
 2. Compile as telas com `./dev assets`. Para recarga automática, use `./dev --profile dev up -d node`.
 3. Escreva os textos das telas em português, dentro de `__()`. Os textos em inglês do kit têm tradução em `lang/pt_BR.json`.
 4. O 2FA é obrigatório. Nos testes, use `User::factory()->withTwoFactor()`. O operador precisa de um cliente ativo: use `User::factory()->operatorWithClient()`.
-5. O seeder cria `admin@weega.com.br`, `suporte@weega.com.br` e `operador@hospital-exemplo.com.br`, todos com a senha `password`. No primeiro login, cada um cadastra o 2FA.
+5. O seeder cria `admin@weega.com.br`, `suporte@weega.com.br`, `operador@hospital-exemplo.com.br` e `gestor@hospital-exemplo.com.br`, todos com a senha `password`. O gestor é um usuário do hospital: usa a área Cliente e a tela Configurações (`User::factory()->managerWithClient()`). No primeiro login, cada um cadastra o 2FA.
 6. Os modelos com o trait `Auditable` gravam a auditoria sozinhos. Para uma ação sem evento de modelo, como vincular clientes, chame `$model->writeAudit()`.
 
 API do agente:

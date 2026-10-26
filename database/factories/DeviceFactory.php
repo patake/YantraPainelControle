@@ -57,6 +57,16 @@ class DeviceFactory extends Factory
         ]);
     }
 
+    /**
+     * Equipamento do sistema de captura de tela (YO SRC).
+     */
+    public function screenCapture(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'system_id' => System::factory()->screen(),
+        ]);
+    }
+
     public function expired(): static
     {
         return $this->state(fn (array $attributes) => [
