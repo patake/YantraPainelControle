@@ -27,10 +27,11 @@ class SaveExamType
     /**
      * @param  array<string, mixed>  $attributes
      * @param  list<array<string, mixed>>  $fields
+     * @param  list<array{field: string, pattern: string}>|null  $serialRules  null mantém as regras seriais atuais
      */
-    public function handle(ExamType $examType, array $attributes, array $fields, ?int $restoredFrom = null): ExamType
+    public function handle(ExamType $examType, array $attributes, array $fields, ?array $serialRules = null, ?int $restoredFrom = null): ExamType
     {
-        return DB::transaction(function () use ($examType, $attributes, $fields, $restoredFrom) {
+        return DB::transaction(function () use ($examType, $attributes, $fields, $serialRules, $restoredFrom) {
             $examType->fill($attributes);
 
             if ($examType->exists) {
@@ -49,7 +50,20 @@ class SaveExamType
                 ));
             }
 
-            $examType->load('fields');
+            // Regras regex da porta serial (E8). O valor extraído vai para o campo de mesmo nome.
+            if ($serialRules !== null) {
+                $examType->serialRules()->delete();
+
+                foreach (array_values($serialRules) as $position => $rule) {
+                    $examType->serialRules()->create([
+                        'field' => $rule['field'],
+                        'pattern' => $rule['pattern'],
+                        'position' => $position,
+                    ]);
+                }
+            }
+
+            $examType->load(['fields', 'serialRules']);
 
             ExamTypeVersion::create([
                 'exam_type_id' => $examType->id,
@@ -64,7 +78,7 @@ class SaveExamType
     }
 
     /**
-     * @return array{attributes: array<string, mixed>, fields: list<array<string, mixed>>}
+     * @return array{attributes: array<string, mixed>, fields: list<array<string, mixed>>, serial_rules: list<array{field: string, pattern: string}>}
      */
     public static function snapshot(ExamType $examType): array
     {
@@ -86,6 +100,11 @@ class SaveExamType
             return $values;
         })->values()->all();
 
-        return ['attributes' => $attributes, 'fields' => $fields];
+        $serialRules = $examType->serialRules
+            ->map(fn ($rule) => ['field' => $rule->field, 'pattern' => $rule->pattern])
+            ->values()
+            ->all();
+
+        return ['attributes' => $attributes, 'fields' => $fields, 'serial_rules' => $serialRules];
     }
 }

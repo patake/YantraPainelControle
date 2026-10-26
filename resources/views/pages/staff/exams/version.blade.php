@@ -137,6 +137,33 @@ new class extends Component {
     }
 
     /**
+     * Regras da porta serial novas, removidas e alteradas, pelo campo (E8).
+     *
+     * @return list<array{change: string, rule: array{field: string, pattern: string}}>
+     */
+    #[Computed]
+    public function serialRuleChanges(): array
+    {
+        $old = collect($this->previous?->snapshot['serial_rules'] ?? [])->keyBy('field');
+        $new = collect($this->current->snapshot['serial_rules'] ?? [])->keyBy('field');
+        $changes = [];
+
+        foreach ($new as $field => $rule) {
+            if (! $old->has($field)) {
+                $changes[] = ['change' => 'added', 'rule' => $rule];
+            } elseif ($old[$field]['pattern'] !== $rule['pattern']) {
+                $changes[] = ['change' => 'changed', 'rule' => $rule];
+            }
+        }
+
+        foreach ($old->diffKeys($new) as $rule) {
+            $changes[] = ['change' => 'removed', 'rule' => $rule];
+        }
+
+        return $changes;
+    }
+
+    /**
      * Restaura esta versão numa versão nova. Só o administrador altera exames (R-EXA-3, R-EXA-10).
      */
     public function restore(RestoreExamTypeVersion $restore): void
@@ -205,7 +232,7 @@ new class extends Component {
         </flux:callout>
     @endif
 
-    @if (! $this->attributeChanges && ! $this->sqlChanges && ! $this->fieldChanges)
+    @if (! $this->attributeChanges && ! $this->sqlChanges && ! $this->fieldChanges && ! $this->serialRuleChanges)
         <flux:card><flux:text>{{ __('Esta versão tem o mesmo conteúdo da versão anterior.') }}</flux:text></flux:card>
     @endif
 
@@ -280,6 +307,32 @@ new class extends Component {
                             <flux:table.cell class="font-mono text-xs">{{ $change['field']['placeholder'] }}</flux:table.cell>
                             <flux:table.cell>{{ $change['field']['label'] ?? '—' }}</flux:table.cell>
                             <flux:table.cell>{{ $change['field']['default_value'] ?? '—' }}</flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+        </flux:card>
+    @endif
+
+    @if ($this->serialRuleChanges)
+        <flux:card class="flex flex-col gap-4">
+            <flux:heading size="lg">{{ __('Regras da porta serial') }}</flux:heading>
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>{{ __('Mudança') }}</flux:table.column>
+                    <flux:table.column>{{ __('Campo') }}</flux:table.column>
+                    <flux:table.column>{{ __('Regra') }}</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach ($this->serialRuleChanges as $change)
+                        <flux:table.row>
+                            <flux:table.cell>
+                                <flux:badge size="sm" :color="['added' => 'green', 'removed' => 'red', 'changed' => 'amber'][$change['change']]">
+                                    {{ ['added' => __('nova'), 'removed' => __('removida'), 'changed' => __('alterada')][$change['change']] }}
+                                </flux:badge>
+                            </flux:table.cell>
+                            <flux:table.cell class="font-mono text-xs">{{ $change['rule']['field'] }}</flux:table.cell>
+                            <flux:table.cell class="font-mono text-xs">{{ $change['rule']['pattern'] }}</flux:table.cell>
                         </flux:table.row>
                     @endforeach
                 </flux:table.rows>

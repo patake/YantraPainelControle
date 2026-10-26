@@ -356,9 +356,14 @@ paths:
     post:
       tags: [Exames]
       summary: Envia os dados extraídos da porta serial
+      description: |
+        O agente aplica as regras regex do exame (serial_rules nos parâmetros) ao conteúdo da porta serial
+        e envia os campos extraídos (R-EXA-12). Um envio novo junta os campos aos campos já recebidos.
+        O nome do campo usa letras maiúsculas, números e "_". O conteúdo bruto vai em POST /exams/{exam}/files,
+        com kind serial_raw. Os dados levam o exame para a conferência.
       operationId: postExamData
       x-yantra-stage: E8
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - $ref: '#/components/parameters/ExamId'
       requestBody:
@@ -378,6 +383,11 @@ paths:
           description: Dados gravados.
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: O exame não está aberto.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
   /updates/latest:

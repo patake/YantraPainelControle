@@ -28,6 +28,11 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Comando `./dev clock`: compara a hora do container com a hora da internet. O código do 2FA depende da hora.
 - Assistente de primeiro acesso em `/primeiro-acesso` (R-ACE-15), com 4 passos: senha nova, 2FA com os códigos de recuperação, tema e "Tudo pronto". Antes do fim do assistente, nenhuma tela do painel abre. O convidado começa no passo 2, porque já criou a senha no convite. Depois que o administrador reinicia o 2FA, o usuário volta ao passo 2.
 - Recarregar o assistente mantém o QR code já lido pelo celular.
+- Porta serial (E8): o cadastro do exame tem o card **Regras da porta serial**, com o campo e a regra regex de cada dado. As regras entram no histórico das versões do exame.
+- O painel aceita só a sintaxe que o motor RE2 do agente aceita (R-EXA-12). O valor extraído é o primeiro grupo entre parênteses ou, sem grupo, o trecho inteiro.
+- Card **Testar as regras da porta serial**: o usuário cola um conteúdo recebido e vê o valor de cada regra, sem gravar nada.
+- Rota `POST /api/v1/agent/exams/{id}/data`: o agente envia os dados extraídos. Um envio novo junta os campos aos campos já recebidos.
+- A tela do exame mostra o card **Dados da porta serial**. Um dado preenche a informação complementar com o mesmo marcador, se o operador ainda não mudou o valor.
 - Atalhos `dev` (Git Bash) e `dev.bat` (cmd e PowerShell) para os comandos do Docker: `up`, `artisan`, `test`, `pint`, `assets`, `psql`, `fresh` e outros. Veja a lista com `./dev help`.
 - Teste automático do cadastro do 2FA com um código TOTP real.
 

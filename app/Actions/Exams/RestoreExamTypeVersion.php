@@ -30,6 +30,13 @@ class RestoreExamTypeVersion
             ]);
         }
 
-        return $this->save->handle($examType, $attributes, $version->snapshot['fields'], restoredFrom: $version->version);
+        // Uma versão anterior à E8 não tem regras seriais na cópia: a lista vazia apaga as regras atuais.
+        return $this->save->handle(
+            $examType,
+            $attributes,
+            $version->snapshot['fields'],
+            serialRules: $version->snapshot['serial_rules'] ?? [],
+            restoredFrom: $version->version,
+        );
     }
 }

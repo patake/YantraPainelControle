@@ -180,6 +180,29 @@ class ExamCycleTest extends TestCase
             ->assertSeeHtml('<img src="https://s3.test/'.$png->preview_path.'"');
     }
 
+    /**
+     * E8 e R-EXA-12: os dados da porta serial aparecem no exame e preenchem a informação
+     * complementar com o mesmo marcador.
+     */
+    public function test_serial_data_shows_on_the_exam_and_fills_the_matching_info_field(): void
+    {
+        $this->examType->fields()->create(['kind' => ExamFieldKind::Info, 'placeholder' => 'FC', 'label' => 'Frequência cardíaca', 'input' => 'text']);
+        $exam = $this->openExam();
+        $this->actingAs($this->operator);
+
+        $page = Livewire::test('pages::app.exams.show', ['exam' => $exam])->assertSet('infoValues.FC', '');
+
+        $exam->update(['serial_data' => ['FC' => '72', 'PA' => '120/80'], 'serial_received_at' => now()]);
+
+        $page->call('refresh')
+            ->assertSee('Dados da porta serial')
+            ->assertSee('120/80')
+            ->assertSet('infoValues.FC', '72')
+            ->set('infoValues.FC', '70')
+            ->call('refresh')
+            ->assertSet('infoValues.FC', '70');
+    }
+
     public function test_history_shows_only_the_exams_of_the_linked_clients(): void
     {
         $this->openExam(ExamStatus::Completed)->update(['patient' => ['PACIENTE' => 'PACIENTE PROPRIO']]);

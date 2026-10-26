@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         // Os exames que já existem entram no histórico com a versão atual.
-        ExamType::with('fields')->each(fn (ExamType $examType) => DB::table('exam_type_versions')->insert([
+        ExamType::with(['fields', 'serialRules'])->each(fn (ExamType $examType) => DB::table('exam_type_versions')->insert([
             'exam_type_id' => $examType->id,
             'version' => $examType->version,
             'snapshot' => json_encode(SaveExamType::snapshot($examType)),

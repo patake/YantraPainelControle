@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Cópia do exame numa versão: atributos, 5 SQLs e leituras (R-EXA-10).
  *
- * @property array{attributes: array<string, mixed>, fields: list<array<string, mixed>>} $snapshot
+ * @property array{attributes: array<string, mixed>, fields: list<array<string, mixed>>, serial_rules?: list<array{field: string, pattern: string}>} $snapshot
  */
 #[Fillable(['exam_type_id', 'version', 'snapshot', 'restored_from', 'user_id'])]
 class ExamTypeVersion extends Model

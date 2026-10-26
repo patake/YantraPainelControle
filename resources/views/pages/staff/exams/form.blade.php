@@ -5,6 +5,8 @@ use App\Enums\ErpType;
 use App\Enums\ExamFieldKind;
 use App\Models\Client;
 use App\Models\ExamType;
+use App\Rules\ValidSerialPattern;
+use App\Support\SerialPattern;
 use Flux\Flux;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -33,6 +35,18 @@ new class extends Component {
     /** @var list<array<string, mixed>> */
     public array $fields = [];
 
+    /**
+     * Regras regex da porta serial (E8, R-EXA-12).
+     *
+     * @var list<array{field: string, pattern: string}>
+     */
+    public array $serialRules = [];
+
+    /**
+     * Conteúdo colado para testar as regras. Não é gravado.
+     */
+    public string $serialSample = '';
+
     public function mount(?ExamType $examType = null): void
     {
         abort_unless(auth()->user()->isStaff(), 403);
@@ -60,6 +74,9 @@ new class extends Component {
                 'options' => $field->options,
                 'required' => $field->required,
             ])->all();
+            $this->serialRules = $examType->serialRules
+                ->map(fn ($rule) => ['field' => $rule->field, 'pattern' => $rule->pattern])
+                ->all();
 
             return;
         }
@@ -121,6 +138,36 @@ new class extends Component {
         $this->fields = array_values($this->fields);
     }
 
+    public function addSerialRule(): void
+    {
+        $this->serialRules[] = ['field' => '', 'pattern' => ''];
+    }
+
+    public function removeSerialRule(int $index): void
+    {
+        unset($this->serialRules[$index]);
+        $this->serialRules = array_values($this->serialRules);
+    }
+
+    /**
+     * Resultado de cada regra no conteúdo de teste. O painel testa com o PCRE no subconjunto do RE2 (R-EXA-12).
+     *
+     * @return list<array{field: string, value: ?string, error: ?string}>
+     */
+    #[Computed]
+    public function serialResults(): array
+    {
+        if (trim($this->serialSample) === '') {
+            return [];
+        }
+
+        return array_map(fn (array $rule) => [
+            'field' => strtoupper(trim($rule['field'])),
+            'value' => SerialPattern::extract($rule['pattern'], $this->serialSample),
+            'error' => $rule['pattern'] === '' ? __('Regra vazia.') : SerialPattern::error($rule['pattern']),
+        ], $this->serialRules);
+    }
+
     /**
      * Salva o exame e as leituras numa versão nova. Só o administrador altera (R-EXA-3).
      */
@@ -143,10 +190,17 @@ new class extends Component {
             'fields.*.input' => ['required', Rule::in(['text', 'number', 'date', 'select', 'textarea'])],
             'fields.*.default_value' => ['nullable', 'string', 'max:255'],
             'fields.*.required' => ['boolean'],
+            'serialRules' => ['array', 'max:50'],
+            'serialRules.*.field' => ['required', 'string', 'regex:/^[A-Za-z0-9_]{1,60}$/', 'distinct:ignore_case'],
+            'serialRules.*.pattern' => ['required', 'string', 'max:1000', new ValidSerialPattern],
         ], [
             'name.unique' => __('O cliente já tem um exame com este nome.'),
             'fields.*.placeholder.distinct' => __('Cada marcador aparece uma vez.'),
+            'serialRules.*.field.regex' => __('O campo usa letras, números e "_", com até 60 caracteres.'),
+            'serialRules.*.field.distinct' => __('Cada campo da porta serial aparece uma vez.'),
         ], [
+            'serialRules.*.field' => __('campo'),
+            'serialRules.*.pattern' => __('regra'),
             'clientId' => __('cliente'),
             'name' => __('nome'),
             'destinationFolder' => __('pasta de destino'),
@@ -184,6 +238,10 @@ new class extends Component {
                 'options' => $field['options'] ?? null,
                 'required' => (bool) $field['required'],
             ], array_values($this->fields)),
+            array_map(fn (array $rule) => [
+                'field' => strtoupper(trim($rule['field'])),
+                'pattern' => $rule['pattern'],
+            ], array_values($this->serialRules)),
         );
 
         Flux::toast(variant: 'success', text: __('Exame salvo na versão :version.', ['version' => $exam->version]));
@@ -324,6 +382,28 @@ new class extends Component {
                 </div>
                 @error('fields.*') <flux:text class="text-red-600">{{ $message }}</flux:text> @enderror
             </flux:card>
+
+            <flux:card class="flex flex-col gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <flux:heading size="lg">{{ __('Regras da porta serial') }}</flux:heading>
+                        <flux:text>{{ __('Sistema YO HUB. O agente aplica cada regra ao conteúdo da porta serial. O valor é o primeiro grupo entre parênteses ou, sem grupo, o trecho inteiro. Use a sintaxe do RE2: sem referência a grupo, lookahead ou lookbehind.') }}</flux:text>
+                    </div>
+                    <flux:button size="sm" icon="plus" wire:click="addSerialRule">{{ __('Adicionar regra') }}</flux:button>
+                </div>
+
+                @forelse ($serialRules as $index => $rule)
+                    <div class="grid gap-2 sm:grid-cols-[12rem_1fr_auto]" wire:key="serial-{{ $index }}">
+                        <flux:input wire:model="serialRules.{{ $index }}.field" size="sm" class="font-mono" :placeholder="__('Campo, ex.: FC')" :aria-label="__('Campo')" />
+                        <flux:input wire:model.blur="serialRules.{{ $index }}.pattern" size="sm" class="font-mono" placeholder="FC:\s*(\d+)" :aria-label="__('Regra')" />
+                        <flux:button size="sm" variant="ghost" icon="trash" wire:click="removeSerialRule({{ $index }})" :aria-label="__('Remover regra')" />
+                        <flux:error name="serialRules.{{ $index }}.field" />
+                        <flux:error name="serialRules.{{ $index }}.pattern" />
+                    </div>
+                @empty
+                    <flux:text>{{ __('Nenhuma regra. Os exames sem porta serial não precisam de regras.') }}</flux:text>
+                @endforelse
+            </flux:card>
         </fieldset>
 
         @if (auth()->user()->isAdmin())
@@ -333,6 +413,41 @@ new class extends Component {
             </div>
         @endif
     </form>
+
+    @if ($serialRules)
+        <flux:card class="flex flex-col gap-4">
+            <div>
+                <flux:heading size="lg">{{ __('Testar as regras da porta serial') }}</flux:heading>
+                <flux:text>{{ __('Cole um conteúdo recebido do equipamento. O painel mostra o valor de cada regra. O teste não grava nada.') }}</flux:text>
+            </div>
+            <flux:textarea wire:model.live.debounce.500ms="serialSample" rows="6" class="font-mono text-xs" :placeholder="__('Conteúdo recebido da porta serial')" />
+
+            @if ($this->serialResults)
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>{{ __('Campo') }}</flux:table.column>
+                        <flux:table.column>{{ __('Valor extraído') }}</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
+                        @foreach ($this->serialResults as $result)
+                            <flux:table.row>
+                                <flux:table.cell class="font-mono text-xs">{{ $result['field'] ?: '—' }}</flux:table.cell>
+                                <flux:table.cell>
+                                    @if ($result['error'])
+                                        <span class="text-red-700 dark:text-red-400">{{ $result['error'] }}</span>
+                                    @elseif ($result['value'] === null)
+                                        <span class="text-amber-700 dark:text-amber-400">{{ __('Não encontrado') }}</span>
+                                    @else
+                                        <span class="font-mono">{{ $result['value'] }}</span>
+                                    @endif
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            @endif
+        </flux:card>
+    @endif
 
     @if ($examId)
         <flux:card class="flex flex-col gap-4">

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
  */
 #[Fillable([
     'client_id', 'device_id', 'exam_type_id', 'operator_id', 'status', 'temp_folder',
-    'patient', 'complementary_info', 'started_at', 'completed_at',
+    'patient', 'complementary_info', 'serial_data', 'serial_received_at', 'started_at', 'completed_at',
 ])]
 class Exam extends Model
 {
@@ -32,6 +32,8 @@ class Exam extends Model
             'status' => ExamStatus::class,
             'patient' => 'array',
             'complementary_info' => 'array',
+            'serial_data' => 'array',
+            'serial_received_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

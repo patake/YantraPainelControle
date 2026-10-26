@@ -30,6 +30,14 @@ new class extends Component {
     /** @var array<string, string> */
     public array $infoValues = [];
 
+    /**
+     * Marcadores já preenchidos com os dados da porta serial.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $serialFilled = [];
+
     public ?int $patientIndex = null;
 
     public string $tasyUsername = '';
@@ -50,6 +58,30 @@ new class extends Component {
             if ($field->kind === ExamFieldKind::Info) {
                 $this->infoValues[$field->placeholder] = (string) ($exam->complementary_info[$field->placeholder] ?? $field->default_value);
             }
+        }
+
+        $this->fillFromSerialData($exam);
+    }
+
+    /**
+     * Um dado da porta serial preenche a informação complementar com o mesmo marcador,
+     * se o operador ainda não mudou o valor padrão (R-EXA-12). Cada campo é preenchido uma vez.
+     */
+    private function fillFromSerialData(Exam $exam): void
+    {
+        foreach ($exam->examType->fields->where('kind', ExamFieldKind::Info) as $field) {
+            $value = $exam->serial_data[$field->placeholder] ?? null;
+            $current = $this->infoValues[$field->placeholder] ?? '';
+
+            if ($value === null || in_array($field->placeholder, $this->serialFilled, true)) {
+                continue;
+            }
+
+            if ($current === '' || $current === (string) $field->default_value) {
+                $this->infoValues[$field->placeholder] = (string) $value;
+            }
+
+            $this->serialFilled[] = $field->placeholder;
         }
     }
 
@@ -93,6 +125,9 @@ new class extends Component {
     public function refresh(): void
     {
         unset($this->exam, $this->patientQuery, $this->recordCommand, $this->patients);
+
+        // Os dados da porta serial podem chegar depois que a tela abriu.
+        $this->fillFromSerialData($this->exam);
     }
 
     public function queryPatients(ExamCycle $cycle): void
@@ -328,6 +363,22 @@ new class extends Component {
                             @endforeach
                         </dl>
                     @endif
+                </flux:card>
+            @endif
+
+            {{-- Dados da porta serial (E8) --}}
+            @if ($exam->serial_data)
+                <flux:card class="flex flex-col gap-3">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                        <flux:heading size="lg">{{ __('Dados da porta serial') }}</flux:heading>
+                        <flux:text class="text-xs">{{ __('Recebidos às :time', ['time' => $exam->serial_received_at?->format('H:i:s')]) }}</flux:text>
+                    </div>
+                    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                        @foreach ($exam->serial_data as $field => $value)
+                            <dt class="font-mono text-xs text-zinc-500">{{ $field }}</dt>
+                            <dd class="font-mono">{{ $value ?? '—' }}</dd>
+                        @endforeach
+                    </dl>
                 </flux:card>
             @endif
 

@@ -1,6 +1,6 @@
 # Roteiro de testes
 
-Este roteiro confere à mão o que o painel já faz (E0 a E7). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
+Este roteiro confere à mão o que o painel já faz (E0 a E8). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
 
 ## 0. Preparação
 
@@ -267,7 +267,7 @@ Cuidado: o S3 local apaga os arquivos quando o container reinicia.
 ### 6.3 Contrato da API
 
 1. Abra <http://localhost:8000/api/docs>.
-2. Resultado esperado: o Swagger mostra as 12 rotas da API do agente. As rotas implementadas têm `x-yantra-status: implemented`.
+2. Resultado esperado: o Swagger mostra as 12 rotas da API do agente. Todas as rotas têm `x-yantra-status: implemented`.
 
 ## 7. Ciclo do exame (E6)
 
@@ -401,3 +401,37 @@ Só o sistema Yantra Screen Capture (YO SRC) usa a combinação de teclas. O see
 3. Resultado esperado: a resposta é 201. Na tela do exame, a lista de arquivos mostra o PDF e a captura.
 4. Clique na captura.
 5. Resultado esperado: o preview mostra a imagem. O PDF continua na lista para a gravação.
+
+## 9. Porta serial (E8)
+
+### 9.1 Regras e teste das regras (R-EXA-12)
+
+1. Como administrador, abra o exame Eletro (teste 6.1).
+2. No card **Regras da porta serial**, clique em **Adicionar regra**. Digite o campo `FC` e a regra `FC:\s*(\d+)`.
+3. Adicione a regra `PA` com `PA:\s*(\d+/\d+)`.
+4. Adicione a regra `X` com `X(?=:)` e clique em **Salvar versão**.
+5. Resultado esperado: o painel recusa a regra `X`, porque o motor RE2 do agente não aceita lookahead.
+6. Remova a regra `X` e salve.
+7. Resultado esperado: o card **Versões** mostra uma versão nova. **Ver diferenças** mostra as 2 regras novas.
+8. No card **Testar as regras da porta serial**, cole o conteúdo:
+   ```
+   PACIENTE: TESTE
+   FC: 72 bpm
+   PA: 120/80 mmHg
+   ```
+9. Resultado esperado: a tabela mostra `FC` = `72` e `PA` = `120/80`. O teste não grava nada.
+10. Consulte os parâmetros do SALA-TESTE (teste 6.2, passo 4).
+11. Resultado esperado: o exame Eletro traz `serial_rules` com as 2 regras.
+
+### 9.2 Dados da porta serial no exame
+
+1. Inicie um exame Eletro no SALA-TESTE (teste 7.1).
+2. Envie os dados extraídos. Troque `<exame>` pelo `exam_id`:
+   ```
+   curl -s -i -X POST http://localhost:8000/api/v1/agent/exams/<exame>/data -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"fields":{"FC":"72","PA":"120/80"}}'
+   ```
+3. Resultado esperado: a resposta é 204. Em até 5 segundos, a tela do exame mostra o card **Dados da porta serial** com `FC` e `PA`, e o status **Em conferência**.
+4. Envie `{"fields":{"fc":"72"}}`.
+5. Resultado esperado: a resposta é 422. O nome do campo usa letras maiúsculas, números e "_".
+6. Se o exame tem uma informação complementar com o marcador `FC`, confira o campo.
+7. Resultado esperado: o campo mostra `72`. Um valor que o operador digitou antes não muda.
