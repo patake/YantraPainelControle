@@ -59,17 +59,31 @@ Endereços:
 
 ## 2. Acesso (E1)
 
-### 2.1 Primeiro login com cadastro do 2FA
+### 2.1 Assistente de primeiro acesso (R-ACE-15)
 
 1. Abra <http://localhost:8000> e entre com `admin@weega.com.br` e `password`.
-2. Resultado esperado: o botão **Entrar** fica desativado e mostra o ícone de carregamento. Depois, o painel abre a tela de Segurança, com o aviso de que o 2FA é obrigatório.
+2. Resultado esperado: o botão **Entrar** fica desativado e mostra o ícone de carregamento. Depois, o painel abre o assistente **Primeiro acesso** no passo 1 (Senha).
+3. Abra <http://localhost:8000/staff>.
+4. Resultado esperado: o painel volta para o assistente. Antes do fim do assistente, nenhuma tela do painel abre.
+5. Digite `password` como senha nova.
+6. Resultado esperado: o painel recusa a senha, porque ela tem menos de 12 caracteres.
+7. Crie uma senha com 12 caracteres ou mais e clique em **Salvar e continuar**.
+8. Resultado esperado: o passo 1 fica com o sinal de concluído. O passo 2 mostra o QR code e a chave manual.
 
-Cuidado: o código do aplicativo depende da hora do celular e da hora do servidor. Deixe a data e a hora do celular e do Windows no modo automático. Antes do teste, rode `./dev clock`: a hora do container e a hora da internet precisam ser iguais. Com 3 horas de diferença, por exemplo, nenhum código vale. Não saia da tela de Segurança antes de digitar o código: ao voltar para a tela, o painel apaga o cadastro não confirmado, e o QR code lido perde o valor.
+Cuidado: o código do aplicativo depende da hora do celular e da hora do servidor. Deixe a data e a hora do celular e do Windows no modo automático. Antes do passo 9, rode `./dev clock`: a hora do container e a hora da internet precisam ser iguais. Com 3 horas de diferença, por exemplo, nenhum código vale.
 
-3. Clique em **Cadastrar o 2FA**, leia o QR code com o aplicativo e digite o código.
-4. Resultado esperado: o painel mostra os códigos de recuperação. Guarde um código para o teste 2.3.
-5. Clique em **Continuar para o painel**.
-6. Resultado esperado: a área Staff Weega abre na tela Início.
+9. Leia o QR code com o aplicativo autenticador. Recarregue a página.
+10. Resultado esperado: o QR code continua o mesmo. O código do aplicativo continua válido.
+11. Digite o código e clique em **Confirmar código**.
+12. Resultado esperado: o painel mostra os códigos de recuperação. Guarde um código para o teste 2.3.
+13. Clique em **Já guardei os códigos**.
+14. Resultado esperado: o passo 3 mostra as opções **Claro**, **Escuro** e **Sistema**. O tema muda na hora.
+15. Escolha um tema e clique em **Confirmar o tema**.
+16. Resultado esperado: o passo 4 mostra **Tudo pronto**.
+17. Clique em **Acessar o painel**.
+18. Resultado esperado: a área Staff Weega abre na tela Início.
+
+Um usuário convidado (teste 3.6) cria a senha no convite. Para esse usuário, o assistente começa no passo 2.
 
 ### 2.2 Login com 2FA
 
@@ -127,7 +141,7 @@ Cuidado: o código do aplicativo depende da hora do celular e da hora do servido
 
 ### 3.4 Área do operador
 
-1. Entre com `operador@hospital-exemplo.com.br` e cadastre o 2FA.
+1. Entre com `operador@hospital-exemplo.com.br` e complete o assistente de primeiro acesso (teste 2.1).
 2. Resultado esperado: a área Cliente mostra só os equipamentos do Hospital Exemplo Norte. O endereço `/staff` mostra o erro 403.
 3. Como administrador, desative o Hospital Exemplo Norte (Clientes › Editar dados).
 4. Resultado esperado: o operador não consegue mais entrar.
@@ -363,7 +377,7 @@ Os comandos abaixo simulam o assistente de teclas do agente. Só o sistema Yantr
 
 Só o sistema Yantra Screen Capture (YO SRC) usa a combinação de teclas. O seeder cria o equipamento `RECEPCAO-01` com esse sistema.
 
-1. Entre com `gestor@hospital-exemplo.com.br` e cadastre o 2FA.
+1. Entre com `gestor@hospital-exemplo.com.br` e complete o assistente de primeiro acesso (teste 2.1).
 2. Resultado esperado: a área Cliente abre. O menu mostra **Gestão › Configurações**.
 3. Abra **Configurações**.
 4. Resultado esperado: a lista mostra só o `RECEPCAO-01`, com `Ctrl+Y`. Os equipamentos do sistema de impressora (`CARDIO-SALA-02`) não aparecem.

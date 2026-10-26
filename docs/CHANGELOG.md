@@ -26,11 +26,14 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Papel **Gestor** (R-ACE-14): usuário do hospital que usa a área Cliente, como o operador. A tela **Configurações** da área Cliente é só do gestor: ele troca a combinação de teclas dos equipamentos YO SRC dos clientes vinculados.
 - O seeder cria o gestor `gestor@hospital-exemplo.com.br` e o equipamento YO SRC `RECEPCAO-01`.
 - Comando `./dev clock`: compara a hora do container com a hora da internet. O código do 2FA depende da hora.
+- Assistente de primeiro acesso em `/primeiro-acesso` (R-ACE-15), com 4 passos: senha nova, 2FA com os códigos de recuperação, tema e "Tudo pronto". Antes do fim do assistente, nenhuma tela do painel abre. O convidado começa no passo 2, porque já criou a senha no convite. Depois que o administrador reinicia o 2FA, o usuário volta ao passo 2.
+- Recarregar o assistente mantém o QR code já lido pelo celular.
 - Atalhos `dev` (Git Bash) e `dev.bat` (cmd e PowerShell) para os comandos do Docker: `up`, `artisan`, `test`, `pint`, `assets`, `psql`, `fresh` e outros. Veja a lista com `./dev help`.
 - Teste automático do cadastro do 2FA com um código TOTP real.
 
 ### Alterado
 
+- O primeiro cadastro do 2FA saiu da tela de Segurança e foi para o assistente de primeiro acesso. A tela de Segurança não mostra mais o botão "Continuar para o painel".
 - O contrato OpenAPI mudou de `resources/openapi/` para `docs/openapi/`. O endereço `/api/docs` continua o mesmo.
 - O usuário novo cria a senha pelo link do convite (7 dias), e não mais pelo link de troca de senha (60 minutos).
 - As regras R-ACE-7 a R-EXA-11 da seção 5.1 da especificação foram confirmadas em 26/10/2026.

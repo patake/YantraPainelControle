@@ -12,6 +12,9 @@ Route::middleware('guest')->group(function () {
     Route::post('convite/{user}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitation.store');
 });
 
+// Assistente de primeiro acesso: senha, 2FA, tema e acesso ao painel (R-ACE-15).
+Route::livewire('primeiro-acesso', 'pages::onboarding')->middleware(['auth', 'active'])->name('onboarding');
+
 Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () {
     Route::get('inicio', HomeController::class)->name('home');
 

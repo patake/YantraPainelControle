@@ -31,7 +31,8 @@ class InvitationController extends Controller
 
         $validated = $request->validate(['password' => $this->passwordRules()]);
 
-        $user->forceFill(['password' => $validated['password'], 'invited_at' => null])->save();
+        // A senha do convite vale como o passo 1 do primeiro acesso (R-ACE-15).
+        $user->forceFill(['password' => $validated['password'], 'password_changed_at' => now(), 'invited_at' => null])->save();
 
         return redirect()->route('login')->with('status', __('Senha criada. Entre com o e-mail e a senha e cadastre o 2FA.'));
     }

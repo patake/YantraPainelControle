@@ -37,6 +37,8 @@ class User extends Authenticatable
             'active' => 'boolean',
             'last_login_at' => 'datetime',
             'invited_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'onboarded_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -88,6 +90,15 @@ class User extends Authenticatable
     {
         // isset() também cobre um usuário criado agora, sem as colunas do 2FA carregadas.
         return isset($this->two_factor_secret, $this->two_factor_confirmed_at);
+    }
+
+    /**
+     * O usuário ainda não terminou o assistente de primeiro acesso, ou ficou sem 2FA
+     * depois que o administrador reiniciou o 2FA (R-ACE-5, R-ACE-12, R-ACE-15).
+     */
+    public function needsOnboarding(): bool
+    {
+        return ! isset($this->onboarded_at) || ! $this->hasConfirmedTwoFactor();
     }
 
     /**

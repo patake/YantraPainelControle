@@ -5,7 +5,6 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 /**
@@ -15,42 +14,23 @@ class TwoFactorTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_redirects_a_user_without_two_factor_to_the_setup(): void
+    public function test_redirects_a_user_without_two_factor_to_the_first_access_wizard(): void
     {
         $this->actingAs(User::factory()->admin()->create())
             ->get(route('staff.dashboard'))
-            ->assertRedirect(route('security.edit'));
+            ->assertRedirect(route('onboarding'));
     }
 
-    public function test_setup_screen_opens_right_after_login_without_asking_the_password_again(): void
+    /**
+     * R-ACE-12: depois que o administrador reinicia o 2FA, o usuário cadastra o 2FA de novo no assistente.
+     */
+    public function test_user_whose_two_factor_was_reset_goes_back_to_the_wizard(): void
     {
-        $user = User::factory()->admin()->create();
-        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+        $user = User::factory()->admin()->withTwoFactor()->create();
+        $user->forceFill(['two_factor_secret' => null, 'two_factor_confirmed_at' => null])->save();
 
-        $this->get(route('security.edit'))
-            ->assertOk()
-            ->assertSee('O painel exige a verificação em duas etapas.');
-    }
-
-    public function test_user_confirms_the_setup_with_the_code_of_the_authenticator_app(): void
-    {
-        $user = User::factory()->operatorWithClient()->create();
-        $this->actingAs($user);
-
-        $modal = Livewire::test('pages::settings.two-factor-setup-modal', ['requiresConfirmation' => true])
-            ->dispatch('start-two-factor-setup')
-            ->assertHasNoErrors();
-
-        // O aplicativo autenticador calcula o código com a chave do QR code.
-        $code = app(Google2FA::class)->getCurrentOtp($modal->get('manualSetupKey'));
-
-        $modal->call('showVerificationIfNecessary')
-            ->set('code', $code)
-            ->call('confirmTwoFactor')
-            ->assertHasNoErrors();
-
-        $this->assertTrue($user->fresh()->hasConfirmedTwoFactor());
-        $this->get(route('app.dashboard'))->assertOk();
+        $this->actingAs($user)->get(route('staff.dashboard'))->assertRedirect(route('onboarding'));
+        Livewire::test('pages::onboarding')->assertSet('step', 2);
     }
 
     public function test_user_with_confirmed_two_factor_reaches_the_area(): void

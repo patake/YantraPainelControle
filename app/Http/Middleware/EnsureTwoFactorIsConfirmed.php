@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * O 2FA é obrigatório para todos (R-ACE-5). Sem 2FA confirmado, o usuário só acessa
- * a tela de segurança, onde cadastra o aplicativo autenticador.
+ * O 2FA é obrigatório para todos (R-ACE-5). Sem o primeiro acesso completo (R-ACE-15)
+ * ou sem 2FA confirmado, o usuário só acessa o assistente de primeiro acesso.
  */
 class EnsureTwoFactorIsConfirmed
 {
@@ -17,9 +17,8 @@ class EnsureTwoFactorIsConfirmed
     {
         $user = $request->user();
 
-        if ($user instanceof User && ! $user->hasConfirmedTwoFactor()) {
-            return redirect()->route('security.edit')
-                ->with('two-factor-required', true);
+        if ($user instanceof User && $user->needsOnboarding()) {
+            return redirect()->route('onboarding');
         }
 
         return $next($request);

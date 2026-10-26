@@ -24,6 +24,7 @@ class ResetUserPassword implements ResetsUserPasswords
 
         $user->forceFill([
             'password' => $input['password'],
+            'password_changed_at' => now(),
             // Com a senha criada, o convite pendente perde o valor (R-ACE-13).
             'invited_at' => null,
         ])->save();

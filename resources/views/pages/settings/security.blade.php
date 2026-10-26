@@ -59,9 +59,10 @@ new #[Title('Security settings')] class extends Component {
             throw $e;
         }
 
-        Auth::user()->update([
+        Auth::user()->forceFill([
             'password' => $validated['password'],
-        ]);
+            'password_changed_at' => now(),
+        ])->save();
 
         $this->reset('current_password', 'password', 'password_confirmation');
 
@@ -134,18 +135,10 @@ new #[Title('Security settings')] class extends Component {
                                 {{ __('You will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.') }}
                             </flux:text>
 
-                            <flux:button variant="primary" :href="route('home')" icon-trailing="arrow-right">
-                                {{ __('Continuar para o painel') }}
-                            </flux:button>
-
                             <livewire:pages::settings.two-factor.recovery-codes :$requiresConfirmation />
                         </div>
                     @else
                         <div class="space-y-4">
-                            <flux:callout icon="shield-exclamation" color="amber">
-                                {{ __('O painel exige a verificação em duas etapas. Cadastre o aplicativo autenticador para continuar.') }}
-                            </flux:callout>
-
                             <flux:text variant="subtle">
                                 {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
                             </flux:text>

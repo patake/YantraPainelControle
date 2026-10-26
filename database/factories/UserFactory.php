@@ -60,6 +60,9 @@ class UserFactory extends Factory
             'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
             'two_factor_recovery_codes' => encrypt(json_encode(['7KQ2-M9XD', 'R4TB-82LN'])),
             'two_factor_confirmed_at' => now(),
+            // Com o 2FA confirmado, o usuário já passou pelo primeiro acesso (R-ACE-15).
+            'password_changed_at' => now(),
+            'onboarded_at' => now(),
         ]);
     }
 
