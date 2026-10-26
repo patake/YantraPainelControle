@@ -17,7 +17,7 @@ Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `./dev
 
 No container de desenvolvimento, o PHP-FPM roda como root (`docker/php/fpm-dev.conf`), igual ao artisan, à fila e ao agendador. Sem isso, um arquivo criado pelo artisan bloqueia o PHP-FPM com "Permission denied" no `laravel.log` e nas views compiladas.
 
-No bind mount do Windows, o Livewire Ã s vezes nÃ£o percebe a mudanÃ§a num componente de arquivo Ãºnico. O sinal Ã© um erro "Public method not found" ou "Public property not found" logo depois de editar a tela. Nesse caso, rode `./dev artisan optimize:clear`.
+No bind mount do Windows, o Livewire às vezes não percebe a mudança num componente de arquivo único. O sinal é um erro "Public method not found" ou "Public property not found" logo depois de editar a tela. Nesse caso, rode `./dev artisan optimize:clear`.
 
 Telas (Livewire 4 com Flux UI gratuito e Fortify):
 
