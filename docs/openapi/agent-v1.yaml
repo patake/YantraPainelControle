@@ -207,7 +207,7 @@ paths:
         O painel entrega cada comando uma vez e marca o comando como entregue.
       operationId: listCommands
       x-yantra-stage: E6
-      x-yantra-status: planned
+      x-yantra-status: implemented
       responses:
         '200':
           description: Comandos pendentes e válidos, do mais antigo para o mais novo.
@@ -239,7 +239,7 @@ paths:
         Um comando expirado recebe 410.
       operationId: postCommandResult
       x-yantra-stage: E6
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - $ref: '#/components/parameters/CommandId'
       requestBody:
@@ -253,6 +253,11 @@ paths:
           description: Resultado gravado.
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: O comando já tem resultado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '410':
           description: O comando expirou antes do resultado.
           content:
@@ -270,7 +275,7 @@ paths:
         Aceita PDF, PNG e texto, até 50 MB. O painel confere o SHA-256 (R-SEG-6).
       operationId: uploadExamFile
       x-yantra-stage: E6
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - $ref: '#/components/parameters/ExamId'
       requestBody:

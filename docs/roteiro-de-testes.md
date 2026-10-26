@@ -1,6 +1,6 @@
 # Roteiro de testes
 
-Este roteiro confere à mão o que o painel já faz (E0 a E5). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
+Este roteiro confere à mão o que o painel já faz (E0 a E6). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
 
 ## 0. Preparação
 
@@ -207,3 +207,75 @@ Cuidado: o S3 local apaga os arquivos quando o container reinicia.
 
 1. Abra <http://localhost:8000/api/docs>.
 2. Resultado esperado: o Swagger mostra as 11 rotas da API do agente. As rotas implementadas têm `x-yantra-status: implemented`.
+
+## 7. Ciclo do exame (E6)
+
+Os comandos abaixo simulam o agente do SALA-TESTE. Use o Git Bash. Troque `<token>` pelo token do teste 4.2.
+
+Antes de começar:
+
+1. Confira que o SALA-TESTE está ativo (teste 4.4) e tem o exame Eletro marcado (teste 6.2).
+2. Entre como o operador criado no teste 3.2. Esse operador está vinculado ao cliente do teste 3.1.
+
+### 7.1 Início do exame
+
+1. Na área Cliente, clique em **Novo exame**. Escolha o SALA-TESTE e o exame Eletro. Clique em **Iniciar exame**.
+2. Resultado esperado: a tela do exame abre com o status **Iniciando**.
+3. Busque os comandos do equipamento:
+   ```
+   curl -s http://localhost:8000/api/v1/agent/commands -H "Authorization: Bearer <token>" -H "Accept: application/json"
+   ```
+4. Resultado esperado: a resposta traz um comando `start_exam` e `"next_poll_seconds":5`. Guarde o `id` do comando e o `exam_id`.
+5. Repita a busca.
+6. Resultado esperado: a lista vem vazia. O painel entrega cada comando uma vez.
+7. Envie o resultado do comando. Troque `<comando>` pelo `id` do passo 4:
+   ```
+   curl -s -i -X POST http://localhost:8000/api/v1/agent/commands/<comando>/result -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"success":true,"data":{"temp_folder":"C:\capturas\Eletro\1"}}'
+   ```
+8. Resultado esperado: a resposta é 204. Em até 5 segundos, a tela do exame mostra o status **Capturando**.
+9. Envie o mesmo resultado de novo.
+10. Resultado esperado: a resposta é 409.
+
+Cuidado: o comando de início expira em 5 minutos. Depois disso, o resultado recebe 410 e o exame fica com falha.
+
+### 7.2 Envio do preview
+
+1. Envie um PDF de teste. Troque `<exame>` pelo `exam_id` do teste 7.1:
+   ```
+   echo "%PDF-1.7 teste" > /c/temp/ecg.pdf
+   curl -s -X POST http://localhost:8000/api/v1/agent/exams/<exame>/files -H "Authorization: Bearer <token>" -H "Accept: application/json" -F kind=pdf -F sha256=$(sha256sum /c/temp/ecg.pdf | cut -d' ' -f1) -F file=@/c/temp/ecg.pdf
+   ```
+2. Resultado esperado: a resposta é 201 com o `id` do arquivo. A tela do exame mostra o preview e o status **Em conferência**. O arquivo aparece em <http://localhost:8081>, na pasta `previews/`.
+3. Repita o envio com `-F sha256=` seguido de 64 zeros.
+4. Resultado esperado: a resposta é 422. O painel recusa um arquivo com o SHA-256 diferente.
+
+### 7.3 Consulta de pacientes
+
+1. Na tela do exame, preencha os filtros e clique em **Consultar no Tasy**.
+2. Busque os comandos (teste 7.1, passo 3).
+3. Resultado esperado: a resposta traz um comando `query_patients` com os valores dos filtros.
+4. Envie o resultado da consulta:
+   ```
+   curl -s -X POST http://localhost:8000/api/v1/agent/commands/<comando>/result -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"success":true,"data":{"columns":["PACIENTE","ATENDIMENTO"],"rows":[{"PACIENTE":"PACIENTE EXEMPLO 1","ATENDIMENTO":"4815162"}]}}'
+   ```
+5. Resultado esperado: a tela do exame mostra a tabela com o paciente.
+
+### 7.4 Gravação do laudo
+
+1. Na tela do exame, escolha o paciente e marque o arquivo. Digite o usuário e a senha do Tasy. Clique em **Gravar laudo**.
+2. Resultado esperado: o status muda para **Gravando**. O campo da senha fica vazio.
+3. Busque os comandos.
+4. Resultado esperado: o comando `record_report` traz o paciente, os arquivos e a senha do Tasy. No banco, a coluna `payload` fica criptografada.
+5. Envie o resultado da gravação. Troque `<arquivo>` pelo `id` do teste 7.2:
+   ```
+   curl -s -X POST http://localhost:8000/api/v1/agent/commands/<comando>/result -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"success":true,"data":{"reports":[{"file_id":"<arquivo>","final_path":"T:\Yantra\ECG-1.pdf","erp_report_id":88421}]}}'
+   ```
+6. Resultado esperado: o exame fica **Concluído**. O preview some do S3. O comando não guarda mais a senha.
+7. Abra **Histórico**.
+8. Resultado esperado: o exame aparece com o paciente. Um exame de outro cliente não aparece.
+
+### 7.5 Cancelamento
+
+1. Inicie outro exame (teste 7.1, passos 1 a 8) e envie um preview (teste 7.2).
+2. Na tela do exame, clique em **Cancelar exame**.
+3. Resultado esperado: o exame fica **Cancelado** e o preview some do S3. A busca de comandos traz um comando `cancel_exam`.

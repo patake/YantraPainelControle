@@ -37,6 +37,9 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
     // Área Cliente: operador.
     Route::prefix('app')->name('app.')->middleware('role:operator')->group(function () {
         Route::livewire('/', 'pages::app.dashboard')->name('dashboard');
+        Route::livewire('exames', 'pages::app.exams.index')->name('exams.index');
+        Route::livewire('exames/novo', 'pages::app.exams.create')->name('exams.create');
+        Route::livewire('exames/{exam}', 'pages::app.exams.show')->name('exams.show');
     });
 });
 

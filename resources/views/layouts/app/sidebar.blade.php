@@ -41,7 +41,13 @@
                 @else
                     <flux:sidebar.group :heading="__('Exames')" class="grid">
                         <flux:sidebar.item icon="home" :href="route('app.dashboard')" :current="request()->routeIs('app.dashboard')" wire:navigate>
-                            {{ __('Início') }}
+                            {{ __('Equipamentos') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="plus-circle" :href="route('app.exams.create')" :current="request()->routeIs('app.exams.create')" wire:navigate>
+                            {{ __('Novo exame') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="clock" :href="route('app.exams.index')" :current="request()->routeIs('app.exams.index') || request()->routeIs('app.exams.show')" wire:navigate>
+                            {{ __('Histórico') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif

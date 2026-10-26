@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Exame realizado: um ciclo de exame num equipamento.
@@ -82,6 +83,41 @@ class Exam extends Model
     public function commands(): HasMany
     {
         return $this->hasMany(AgentCommand::class);
+    }
+
+    /**
+     * Apaga os previews do S3. O painel guarda só os dados dos arquivos (R-EXA-6 e R-EXA-7).
+     */
+    public function purgePreviews(): void
+    {
+        $files = $this->files()->whereNotNull('preview_path')->get(['id', 'preview_path']);
+
+        if ($files->isEmpty()) {
+            return;
+        }
+
+        Storage::disk('s3')->delete($files->pluck('preview_path')->all());
+        $this->files()->whereKey($files->pluck('id'))->update(['preview_path' => null]);
+    }
+
+    /**
+     * Pasta dos previews deste exame no S3.
+     */
+    public function previewFolder(): string
+    {
+        return "previews/{$this->client_id}/{$this->id}";
+    }
+
+    /**
+     * Exames que o usuário pode ver: todos para a Staff Weega, só os dos clientes
+     * vinculados para o operador (R-ACE-2).
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        if (! $user->isStaff()) {
+            $query->whereIn('client_id', $user->clients()->where('active', true)->select('clients.id'));
+        }
     }
 
     #[Scope]

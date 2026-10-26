@@ -9,6 +9,13 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Pasta `docs/` com este CHANGELOG, o roteiro de testes e o contrato OpenAPI.
 - Senha com no mínimo 12 caracteres (R-ACE-8).
 - A recuperação de senha mostra a mesma mensagem para qualquer e-mail (R-ACE-9).
+- Ciclo do exame (E6): o operador inicia o exame, consulta os pacientes, grava o laudo no ERP e conclui ou cancela o exame.
+- Rotas `GET /api/v1/agent/commands` e `POST /api/v1/agent/commands/{id}/result`. O painel entrega cada comando uma vez e pede uma nova busca a cada 5 segundos com um exame aberto, ou a cada 30 segundos sem exame.
+- Rota `POST /api/v1/agent/exams/{id}/files` para o preview do exame no S3, com o SHA-256 conferido (R-EXA-6, R-SEG-6).
+- A senha do Tasy vai só no comando criptografado. O painel apaga a senha quando recebe o resultado ou quando o comando expira.
+- O painel apaga os previews no fim do exame e a cada hora apaga os previews com mais de 24 horas (R-EXA-7).
+- Tarefa `commands:expire`, a cada minuto: um início expirado põe o exame em falha, e uma gravação expirada devolve o exame para revisão.
+- Telas do operador: Novo exame, tela do exame com o preview e Histórico.
 
 ### Alterado
 
