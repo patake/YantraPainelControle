@@ -343,7 +343,7 @@ paths:
         do instalador antes de instalar.
       operationId: getLatestUpdate
       x-yantra-stage: E4
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - name: current
           in: query

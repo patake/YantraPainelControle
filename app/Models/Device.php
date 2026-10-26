@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DeviceStatus;
+use App\Enums\ReleaseChannel;
 use App\Exceptions\LicenseUnavailableException;
 use App\Models\Concerns\Auditable;
 use Database\Factories\DeviceFactory;
@@ -28,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
  */
 #[Fillable([
     'client_id', 'system_id', 'signature', 'status', 'trial_ends_at', 'decided_by', 'decided_at',
-    'hostname', 'machine_type', 'domain', 'macs', 'windows_version', 'agent_version',
+    'hostname', 'machine_type', 'domain', 'macs', 'windows_version', 'agent_version', 'release_channel',
     'config_version', 'last_seen_at', 'registered_at',
 ])]
 class Device extends Model implements AuthenticatableContract, AuthorizableContract
@@ -45,6 +46,7 @@ class Device extends Model implements AuthenticatableContract, AuthorizableContr
     {
         return [
             'status' => DeviceStatus::class,
+            'release_channel' => ReleaseChannel::class,
             'trial_ends_at' => 'datetime',
             'decided_at' => 'datetime',
             'macs' => 'array',

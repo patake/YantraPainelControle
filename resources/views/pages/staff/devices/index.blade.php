@@ -103,6 +103,19 @@ new #[Title('Equipamentos')] class extends Component {
         Flux::toast(variant: 'success', text: __(':device ativado.', ['device' => $device->hostname]));
     }
 
+    /**
+     * Canal de atualização: piloto recebe as versões novas antes do canal estável (E4).
+     */
+    public function setChannel(string $deviceId, string $channel): void
+    {
+        $device = Device::findOrFail($deviceId);
+        $this->authorize('decide', $device);
+
+        $device->update(['release_channel' => App\Enums\ReleaseChannel::from($channel)]);
+
+        Flux::toast(text: __('Canal de :device alterado.', ['device' => $device->hostname]));
+    }
+
     public function block(string $deviceId): void
     {
         $device = Device::findOrFail($deviceId);
@@ -184,7 +197,16 @@ new #[Title('Equipamentos')] class extends Component {
                         </flux:badge>
                     </flux:table.cell>
                     <flux:table.cell class="tabular-nums">{{ $device->last_seen_at?->diffForHumans() ?? __('Nunca') }}</flux:table.cell>
-                    <flux:table.cell class="font-mono text-xs">{{ $device->agent_version ?? '—' }}</flux:table.cell>
+                    <flux:table.cell class="font-mono text-xs">
+                        {{ $device->agent_version ?? '—' }}
+                        @can('decide', $device)
+                            <button type="button" class="ms-1 rounded px-1.5 py-0.5 font-sans text-xs {{ $device->release_channel === App\Enums\ReleaseChannel::Pilot ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300' }}"
+                                wire:click="setChannel('{{ $device->id }}', '{{ $device->release_channel === App\Enums\ReleaseChannel::Pilot ? 'stable' : 'pilot' }}')"
+                                title="{{ __('Trocar o canal de atualização') }}">
+                                {{ $device->release_channel === App\Enums\ReleaseChannel::Pilot ? __('piloto') : __('estável') }}
+                            </button>
+                        @endcan
+                    </flux:table.cell>
                     <flux:table.cell align="end">
                         @can('decide', $device)
                             <div class="flex justify-end gap-1">

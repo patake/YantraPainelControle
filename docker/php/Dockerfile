@@ -8,5 +8,6 @@ RUN apk add --no-cache icu-libs libzip libpq \
     && apk del .build-deps
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY conf.d/yantra.ini /usr/local/etc/php/conf.d/yantra.ini
 
 WORKDIR /var/www/html

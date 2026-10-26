@@ -26,6 +26,7 @@ return new class extends Migration
             $table->json('macs')->nullable();
             $table->string('windows_version')->nullable();
             $table->string('agent_version', 20)->nullable();
+            $table->string('release_channel', 20)->default('stable');
             $table->unsignedInteger('config_version')->default(0);
             $table->timestamp('last_seen_at')->nullable();
             $table->timestamp('registered_at');

@@ -19,6 +19,7 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
 
         Route::livewire('equipamentos', 'pages::staff.devices.index')->name('devices.index');
         Route::livewire('sistemas', 'pages::staff.systems.index')->name('systems.index');
+        Route::livewire('versoes', 'pages::staff.releases.index')->name('releases.index');
 
         Route::livewire('usuarios', 'pages::staff.users.index')->name('users.index');
         Route::livewire('usuarios/novo', 'pages::staff.users.form')->name('users.create');

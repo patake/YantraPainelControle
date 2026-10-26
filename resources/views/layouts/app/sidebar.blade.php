@@ -28,6 +28,9 @@
                         <flux:sidebar.item icon="users" :href="route('staff.users.index')" :current="request()->routeIs('staff.users.*')" wire:navigate>
                             {{ __('Usuários') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="arrow-down-tray" :href="route('staff.releases.index')" :current="request()->routeIs('staff.releases.*')" wire:navigate>
+                            {{ __('Versões do agente') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="clipboard-document-list" :href="route('staff.logs.audit')" :current="request()->routeIs('staff.logs.*')" wire:navigate>
                             {{ __('Log e auditoria') }}
                         </flux:sidebar.item>
