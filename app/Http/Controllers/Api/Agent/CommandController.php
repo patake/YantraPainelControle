@@ -48,6 +48,8 @@ class CommandController extends Controller
             return $commands;
         });
 
+        $openExamId = $device->exams()->open()->value('id');
+
         return response()->json([
             'data' => $commands->map(fn (AgentCommand $command) => [
                 'id' => $command->id,
@@ -56,7 +58,10 @@ class CommandController extends Controller
                 'expires_at' => $command->expires_at->toIso8601String(),
                 'payload' => $command->payload ?? (object) [],
             ])->values(),
-            'next_poll_seconds' => $device->exams()->open()->exists() ? self::POLL_WITH_EXAM : self::POLL_IDLE,
+            'next_poll_seconds' => $openExamId !== null ? self::POLL_WITH_EXAM : self::POLL_IDLE,
+            // O agente encerra o ciclo quando o exame termina no painel sem um comando,
+            // por exemplo ao concluir sem um laudo com erro (R-EXA-9).
+            'open_exam_id' => $openExamId,
         ]);
     }
 

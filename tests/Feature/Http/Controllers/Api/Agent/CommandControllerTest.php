@@ -45,7 +45,8 @@ class CommandControllerTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $command->id)
             ->assertJsonPath('data.0.payload.exam_name', 'ECG')
-            ->assertJsonPath('next_poll_seconds', 30);
+            ->assertJsonPath('next_poll_seconds', 30)
+            ->assertJsonPath('open_exam_id', null);
 
         $this->assertSame(CommandStatus::Delivered, $command->fresh()->status);
         $this->withToken($token)->getJson(route('agent.commands.index'))->assertJsonCount(0, 'data');
@@ -57,7 +58,8 @@ class CommandControllerTest extends TestCase
 
         $this->withToken($this->tokenFor($exam->device))
             ->getJson(route('agent.commands.index'))
-            ->assertJsonPath('next_poll_seconds', 5);
+            ->assertJsonPath('next_poll_seconds', 5)
+            ->assertJsonPath('open_exam_id', $exam->id);
     }
 
     public function test_start_result_moves_the_exam_to_capturing_with_the_temporary_folder(): void

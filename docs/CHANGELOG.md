@@ -25,6 +25,7 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - A combinação padrão da captura de tela é `Ctrl+Y` (R-EXA-11). Só o sistema Yantra Screen Capture (YO SRC) usa a combinação: nos outros sistemas, os parâmetros trazem `hotkey` null, e a rota `PUT /settings/hotkey` responde 409.
 - Papel **Gestor** (R-ACE-14): usuário do hospital que usa a área Cliente, como o operador. A tela **Configurações** da área Cliente é só do gestor: ele troca a combinação de teclas dos equipamentos YO SRC dos clientes vinculados.
 - O seeder cria o gestor `gestor@hospital-exemplo.com.br` e o equipamento YO SRC `RECEPCAO-01`.
+- Campo `open_exam_id` na resposta de `GET /api/v1/agent/commands`: o exame aberto no equipamento, ou null. Sem exame aberto, o agente fecha o ciclo, por exemplo depois de "Concluir sem o laudo com erro", que não envia comando ao agente.
 - Comando `./dev clock`: compara a hora do container com a hora da internet. O código do 2FA depende da hora.
 - Assistente de primeiro acesso em `/primeiro-acesso` (R-ACE-15), com 4 passos: senha nova, 2FA com os códigos de recuperação, tema e "Tudo pronto". Antes do fim do assistente, nenhuma tela do painel abre. O convidado começa no passo 2, porque já criou a senha no convite. Depois que o administrador reinicia o 2FA, o usuário volta ao passo 2.
 - Recarregar o assistente mantém o QR code já lido pelo celular.

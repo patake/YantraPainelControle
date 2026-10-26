@@ -227,6 +227,13 @@ paths:
                   next_poll_seconds:
                     type: integer
                     example: 5
+                  open_exam_id:
+                    type: string
+                    format: uuid
+                    nullable: true
+                    description: |
+                      Exame aberto no equipamento. Sem exame aberto, o agente encerra o ciclo que tem,
+                      porque o operador concluiu ou cancelou o exame no painel.
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/LicenseBlocked' }
 
