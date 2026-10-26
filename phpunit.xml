@@ -23,8 +23,8 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="yantra_painel_test"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
@@ -32,5 +32,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Chave usada só nos testes. -->
+        <env name="YANTRA_SIGNING_KEY_ID" value="test"/>
+        <env name="YANTRA_SIGNING_SECRET_KEY" value="jJI1wVSfOD//NdtDjnGkS15v67NA49lKFS2o5Bx7IW66Pql3vaYrJsYxXvPUPPOUXb3zWOJegiJLAcq22nBf6w=="/>
     </php>
 </phpunit>

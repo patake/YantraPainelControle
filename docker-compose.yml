@@ -42,6 +42,8 @@ services:
     volumes:
       # O PostgreSQL 18 grava os dados em /var/lib/postgresql/18/docker.
       - pgdata:/var/lib/postgresql
+      # Banco dos testes (yantra_painel_test). Roda só quando o volume está vazio.
+      - ./docker/postgres/create-test-database.sql:/docker-entrypoint-initdb.d/create-test-database.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

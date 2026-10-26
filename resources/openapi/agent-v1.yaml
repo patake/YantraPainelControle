@@ -1,0 +1,726 @@
+openapi: 3.1.0
+info:
+  title: Yantra Painel · API do agente
+  version: 1.0.0-draft
+  description: |
+    Contrato entre o agente Yantra (serviço Go no equipamento) e o painel administrativo.
+
+    **Autenticação.** O agente envia o token do equipamento no cabeçalho
+    `Authorization: Bearer <token>`. O painel entrega o token no registro. O token tem a
+    habilidade `agent`. Um token de outro tipo recebe 403.
+
+    **Assinatura das respostas.** Toda resposta autenticada traz três cabeçalhos:
+    `X-Yantra-Timestamp` (segundos Unix), `X-Yantra-Key-Id` e `X-Yantra-Signature`.
+    A assinatura é Ed25519, em base64, sobre a mensagem `<timestamp>.<corpo da resposta>`.
+    O agente tem a chave pública no instalador. O agente rejeita uma resposta com
+    assinatura inválida.
+
+    **Estado das rotas.** `x-yantra-status: implemented` indica uma rota que já funciona.
+    `planned` indica uma rota só no contrato, com a etapa do plano em `x-yantra-stage`.
+servers:
+  - url: http://localhost:8000/api/v1/agent
+    description: Desenvolvimento (Docker)
+security:
+  - deviceToken: []
+tags:
+  - name: Conexão
+  - name: Registro
+  - name: Licença
+  - name: Parâmetros
+  - name: Comandos
+  - name: Exames
+  - name: Atualização
+
+paths:
+  /public-key:
+    get:
+      tags: [Conexão]
+      summary: Chave pública que confere as respostas assinadas
+      operationId: getPublicKey
+      security: []
+      x-yantra-stage: E0
+      x-yantra-status: implemented
+      responses:
+        '200':
+          description: Chave pública Ed25519.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKey'
+
+  /ping:
+    get:
+      tags: [Conexão]
+      summary: Testa o token e a assinatura
+      operationId: ping
+      x-yantra-stage: E0
+      x-yantra-status: implemented
+      responses:
+        '200':
+          description: O token é válido. Também atualiza o sinal de vida do equipamento.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ping'
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /activation/{cnpj}:
+    get:
+      tags: [Registro]
+      summary: Sistemas e licenças livres do cliente
+      description: |
+        O assistente de ativação chama esta rota depois de validar os dígitos do CNPJ.
+        Limite: 10 tentativas por hora por IP (R-LIC-8). CNPJ sem cadastro recebe 404.
+      operationId: getActivation
+      security: []
+      x-yantra-stage: E2
+      x-yantra-status: planned
+      parameters:
+        - name: cnpj
+          in: path
+          required: true
+          description: CNPJ só com os 14 dígitos.
+          schema: { type: string, pattern: '^\d{14}$' }
+      responses:
+        '200':
+          description: Cliente e sistemas com licença livre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /register:
+    post:
+      tags: [Registro]
+      summary: Registra o equipamento e entrega o token
+      description: |
+        Aceita só CNPJ cadastrado com licença livre no sistema escolhido (R-LIC-2).
+        O equipamento entra em trial por 7 dias (R-LIC-3).
+        A mesma assinatura no mesmo cliente reaproveita o equipamento e gera um token novo (R-LIC-7).
+        A mesma assinatura em outro cliente recebe 409 (R-LIC-6).
+      operationId: register
+      security: []
+      x-yantra-stage: E2
+      x-yantra-status: planned
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Equipamento registrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /license:
+    get:
+      tags: [Licença]
+      summary: Estado da licença do equipamento
+      description: |
+        O agente consulta em intervalos regulares. Um equipamento bloqueado continua com o
+        token válido e recebe só esta resposta (R-SEG-1).
+      operationId: getLicense
+      x-yantra-stage: E3
+      x-yantra-status: planned
+      responses:
+        '200':
+          description: Licença assinada.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /config:
+    get:
+      tags: [Parâmetros]
+      summary: Parâmetros do equipamento
+      description: |
+        Exames habilitados, SQLs, leituras, conexão do ERP, pastas e credencial de rede.
+        Use `If-None-Match` com a versão atual para receber 304 sem corpo.
+        Só a Staff Weega altera SQLs e conexões (R-EXA-3).
+      operationId: getConfig
+      x-yantra-stage: E5
+      x-yantra-status: planned
+      parameters:
+        - name: If-None-Match
+          in: header
+          required: false
+          description: Versão dos parâmetros que o agente já tem.
+          schema: { type: string, example: '"7"' }
+      responses:
+        '200':
+          description: Parâmetros assinados.
+          headers:
+            ETag: { schema: { type: string }, description: Versão dos parâmetros (config_version). }
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '304':
+          description: O agente já tem a versão atual.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/LicenseBlocked' }
+
+  /commands:
+    get:
+      tags: [Comandos]
+      summary: Comandos pendentes
+      description: |
+        Consulta periódica: a cada 5 segundos com exame aberto e a cada 30 segundos sem exame.
+        O painel entrega cada comando uma vez e marca o comando como entregue.
+      operationId: listCommands
+      x-yantra-stage: E6
+      x-yantra-status: planned
+      responses:
+        '200':
+          description: Comandos pendentes e válidos, do mais antigo para o mais novo.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, next_poll_seconds]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Command' }
+                  next_poll_seconds:
+                    type: integer
+                    example: 5
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/LicenseBlocked' }
+
+  /commands/{command}/result:
+    post:
+      tags: [Comandos]
+      summary: Resultado de um comando
+      description: |
+        Depois do resultado do comando record_report, o painel apaga o payload com a senha do Tasy (R-EXA-5).
+        Um comando expirado recebe 410.
+      operationId: postCommandResult
+      x-yantra-stage: E6
+      x-yantra-status: planned
+      parameters:
+        - $ref: '#/components/parameters/CommandId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandResult'
+      responses:
+        '204':
+          description: Resultado gravado.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410':
+          description: O comando expirou antes do resultado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /exams/{exam}/files:
+    post:
+      tags: [Exames]
+      summary: Envia a cópia de preview de um arquivo do exame
+      description: |
+        O painel guarda a cópia em previews/ no S3 só enquanto o exame está aberto (R-EXA-6 e R-EXA-7).
+        O original fica no equipamento até a cópia para o file server.
+        Aceita PDF, PNG e texto, até 50 MB. O painel confere o SHA-256 (R-SEG-6).
+      operationId: uploadExamFile
+      x-yantra-stage: E6
+      x-yantra-status: planned
+      parameters:
+        - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, kind, sha256]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                kind:
+                  $ref: '#/components/schemas/ExamFileKind'
+                sha256:
+                  type: string
+                  pattern: '^[a-f0-9]{64}$'
+      responses:
+        '201':
+          description: Arquivo recebido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamFile'
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: O exame não está aberto.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /exams/{exam}/data:
+    post:
+      tags: [Exames]
+      summary: Envia os dados extraídos da porta serial
+      operationId: postExamData
+      x-yantra-stage: E8
+      x-yantra-status: planned
+      parameters:
+        - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fields]
+              properties:
+                fields:
+                  type: object
+                  additionalProperties: { type: string }
+                  example: { FC: '72', PA: '120/80' }
+      responses:
+        '204':
+          description: Dados gravados.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /updates/latest:
+    get:
+      tags: [Atualização]
+      summary: Versão disponível do agente
+      description: |
+        A versão do canal do equipamento (piloto ou estável). A URL de download é uma URL
+        assinada do S3, válida por poucos minutos. O agente confere o SHA-256 e a assinatura
+        do instalador antes de instalar.
+      operationId: getLatestUpdate
+      x-yantra-stage: E4
+      x-yantra-status: planned
+      parameters:
+        - name: current
+          in: query
+          required: true
+          description: Versão instalada no equipamento.
+          schema: { type: string, example: 2.0.0 }
+      responses:
+        '200':
+          description: Existe uma versão mais nova.
+          headers:
+            X-Yantra-Timestamp: { $ref: '#/components/headers/Timestamp' }
+            X-Yantra-Key-Id: { $ref: '#/components/headers/KeyId' }
+            X-Yantra-Signature: { $ref: '#/components/headers/Signature' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Release'
+        '204':
+          description: O equipamento já tem a versão mais nova.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+components:
+  securitySchemes:
+    deviceToken:
+      type: http
+      scheme: bearer
+      description: Token do equipamento, entregue em POST /register.
+
+  headers:
+    Timestamp:
+      description: Momento da assinatura, em segundos Unix.
+      schema: { type: integer, example: 1792965000 }
+    KeyId:
+      description: Identificador da chave que assinou a resposta.
+      schema: { type: string, example: dev }
+    Signature:
+      description: Assinatura Ed25519 em base64 sobre "<timestamp>.<corpo>".
+      schema: { type: string }
+
+  parameters:
+    CommandId:
+      name: command
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExamId:
+      name: exam
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthenticated:
+      description: Token ausente, inválido ou revogado.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: O token não pertence a um equipamento.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    LicenseBlocked:
+      description: A licença do equipamento não permite a ação. Consulte GET /license.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: O recurso não existe ou não pertence ao equipamento.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Conflito com o estado atual.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Limite de tentativas atingido.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Dados inválidos.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationError' }
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
+    ValidationError:
+      type: object
+      required: [message, errors]
+      properties:
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    PublicKey:
+      type: object
+      required: [key_id, algorithm, public_key]
+      properties:
+        key_id: { type: string, example: dev }
+        algorithm: { type: string, enum: [ed25519] }
+        public_key: { type: string, description: Chave pública em base64 (32 bytes). }
+
+    Ping:
+      type: object
+      required: [device_id, status, config_version, server_time]
+      properties:
+        device_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/DeviceStatus' }
+        config_version: { type: integer }
+        server_time: { type: string, format: date-time }
+
+    DeviceStatus:
+      type: string
+      enum: [trial, active, expired, blocked]
+
+    SystemCode:
+      type: string
+      enum: [YC_PRT, YO_PRT, YO_SRC, YO_HUB]
+
+    Activation:
+      type: object
+      required: [client, systems]
+      properties:
+        client:
+          type: object
+          required: [trade_name]
+          properties:
+            trade_name: { type: string, example: Hospital Exemplo Norte }
+        systems:
+          type: array
+          items:
+            type: object
+            required: [code, name, available]
+            properties:
+              code: { $ref: '#/components/schemas/SystemCode' }
+              name: { type: string, example: Yantra Cardio Printer }
+              available: { type: integer, description: Licenças livres., example: 2 }
+
+    RegisterRequest:
+      type: object
+      required: [cnpj, system, signature, hostname]
+      properties:
+        cnpj: { type: string, pattern: '^\d{14}$' }
+        system: { $ref: '#/components/schemas/SystemCode' }
+        signature:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+          description: SHA-256 do UUID da placa-mãe (SMBIOS) com o MachineGuid do Windows.
+        hostname: { type: string, example: CARDIO-SALA-04 }
+        machine_type: { type: string, example: Desktop }
+        domain: { type: string, nullable: true, example: HOSP.LOCAL }
+        macs:
+          type: array
+          items: { type: string, example: '00:1A:2B:3C:4D:5E' }
+        windows_version: { type: string, example: Windows 11 Pro 24H2 }
+        agent_version: { type: string, example: 2.0.0 }
+
+    RegisterResponse:
+      type: object
+      required: [device_id, token, status, trial_ends_at]
+      properties:
+        device_id: { type: string, format: uuid }
+        token:
+          type: string
+          description: Token do equipamento. O agente guarda o token com DPAPI.
+        status: { $ref: '#/components/schemas/DeviceStatus' }
+        trial_ends_at: { type: string, format: date-time }
+
+    License:
+      type: object
+      required: [device_id, status, system, checked_at]
+      properties:
+        device_id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/DeviceStatus' }
+        system:
+          type: object
+          required: [code, name, feature]
+          properties:
+            code: { $ref: '#/components/schemas/SystemCode' }
+            name: { type: string }
+            feature: { type: string, enum: [printer, screen, serial] }
+            branding:
+              type: object
+              additionalProperties: true
+        trial_ends_at: { type: string, format: date-time, nullable: true }
+        checked_at:
+          type: string
+          format: date-time
+          description: O agente usa este horário para detectar o relógio do Windows alterado.
+        message:
+          type: string
+          nullable: true
+          description: Mensagem da tela de licença bloqueada.
+
+    Config:
+      type: object
+      required: [version, capture_base_path, exams]
+      properties:
+        version: { type: integer, description: devices.config_version }
+        capture_base_path: { type: string, example: 'C:\ProgramData\YantraAgente\capturas' }
+        network_credential:
+          type: object
+          nullable: true
+          description: Só para equipamento fora de domínio.
+          properties:
+            username: { type: string }
+            password: { type: string }
+        hotkey: { type: string, nullable: true, example: Ctrl+Y }
+        serial_port: { type: string, nullable: true, example: COM3 }
+        erp_connection:
+          $ref: '#/components/schemas/ErpConnection'
+        exams:
+          type: array
+          items: { $ref: '#/components/schemas/ExamType' }
+
+    ErpConnection:
+      type: object
+      nullable: true
+      required: [db_type, host, port, service_name, username, password]
+      properties:
+        db_type: { type: string, enum: [oracle] }
+        host: { type: string }
+        port: { type: integer, example: 1521 }
+        service_name: { type: string }
+        username: { type: string }
+        password:
+          type: string
+          description: Viaja só por HTTPS, numa resposta assinada. O agente guarda com DPAPI.
+
+    ExamType:
+      type: object
+      required: [id, name, erp_type, destination_folder, version, sql, fields]
+      properties:
+        id: { type: integer }
+        name: { type: string, example: ECG Repouso }
+        erp_type: { type: string, enum: [TASY_HTML5, DELPHI, JAVA] }
+        procedure_code: { type: string, nullable: true }
+        destination_folder: { type: string, example: '\\servidor\yantra\ECG' }
+        version: { type: integer }
+        sql:
+          type: object
+          description: Os marcadores {X} viram variáveis de ligação (bind) no agente (R-EXA-4).
+          required: [query, auth, insert, image, update]
+          properties:
+            query: { type: string }
+            auth: { type: string }
+            insert: { type: string }
+            image: { type: string }
+            update: { type: string }
+        fields:
+          type: array
+          items: { $ref: '#/components/schemas/ExamField' }
+        serial_rules:
+          type: array
+          items:
+            type: object
+            required: [field, pattern]
+            properties:
+              field: { type: string }
+              pattern: { type: string, description: Expressão regular RE2. }
+
+    ExamField:
+      type: object
+      required: [kind, placeholder, input, required]
+      properties:
+        kind: { type: string, enum: [internal, param, filter, info] }
+        placeholder: { type: string, example: DT_PEDIDO }
+        label: { type: string, nullable: true, example: Data do pedido }
+        input: { type: string, enum: [text, date, select, number] }
+        default_value: { type: string, nullable: true }
+        options:
+          type: array
+          nullable: true
+          items: { type: string }
+        required: { type: boolean }
+
+    CommandType:
+      type: string
+      enum: [start_exam, query_patients, record_report, test_erp, cancel_exam, sync]
+
+    Command:
+      type: object
+      required: [id, type, expires_at, payload]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/CommandType' }
+        exam_id: { type: string, format: uuid, nullable: true }
+        expires_at: { type: string, format: date-time }
+        payload:
+          oneOf:
+            - $ref: '#/components/schemas/StartExamPayload'
+            - $ref: '#/components/schemas/QueryPatientsPayload'
+            - $ref: '#/components/schemas/RecordReportPayload'
+            - $ref: '#/components/schemas/EmptyPayload'
+
+    StartExamPayload:
+      type: object
+      required: [exam_type_id, exam_name]
+      properties:
+        exam_type_id: { type: integer }
+        exam_name: { type: string }
+
+    QueryPatientsPayload:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: object
+          description: Valores dos Parâmetros e Filtros, por marcador.
+          additionalProperties: { type: string }
+
+    RecordReportPayload:
+      type: object
+      required: [tasy_username, tasy_password, patient, files, values]
+      properties:
+        tasy_username: { type: string }
+        tasy_password:
+          type: string
+          description: O painel apaga o payload depois do resultado ou da expiração (R-EXA-5).
+        patient:
+          type: object
+          additionalProperties: true
+          description: Linha escolhida da consulta de pacientes.
+        files:
+          type: array
+          items:
+            type: object
+            required: [id, original_name, sha256]
+            properties:
+              id: { type: string, format: uuid }
+              original_name: { type: string }
+              sha256: { type: string }
+        values:
+          type: object
+          description: Informações complementares, por marcador.
+          additionalProperties: { type: string }
+
+    EmptyPayload:
+      type: object
+      additionalProperties: false
+
+    CommandResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+        error:
+          type: string
+          nullable: true
+          example: 'ORA-02291: restrição de integridade violada'
+        data:
+          type: object
+          additionalProperties: true
+          description: |
+            start_exam: { temp_folder }.
+            query_patients: { columns, rows }.
+            record_report: { reports: [{ file_id, final_path, erp_report_id, error }] }.
+            test_erp: { server_version, duration_ms }.
+
+    ExamFileKind:
+      type: string
+      enum: [pdf, png, serial_raw, serial_data]
+
+    ExamFile:
+      type: object
+      required: [id, kind, original_name, sha256, size_bytes]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/ExamFileKind' }
+        original_name: { type: string }
+        sha256: { type: string }
+        size_bytes: { type: integer }
+
+    Release:
+      type: object
+      required: [version, channel, sha256, size_bytes, download_url, download_expires_at]
+      properties:
+        version: { type: string, example: 2.1.0 }
+        channel: { type: string, enum: [pilot, stable] }
+        sha256: { type: string }
+        size_bytes: { type: integer }
+        notes: { type: string, nullable: true }
+        download_url: { type: string, format: uri }
+        download_expires_at: { type: string, format: date-time }

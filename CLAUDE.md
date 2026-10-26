@@ -9,6 +9,15 @@ Esta máquina não tem PHP, Composer, Node nem PostgreSQL. Todo o ambiente roda 
 
 Cuidado: o LocalStack community não confere permissões e não guarda os objetos depois de reiniciar. Teste no LocalStack só o fluxo de gravação e leitura. A regra de acesso privado só vale no S3 da AWS.
 
+Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `docker compose exec -T app php artisan test --compact`. Rode o Pint com `docker compose exec -T app vendor/bin/pint app bootstrap config database routes tests --format agent`, porque o container não tem Git e a opção `--dirty` não funciona.
+
+API do agente:
+
+1. O contrato OpenAPI fica em `resources/openapi/agent-v1.yaml` e abre em <http://localhost:8000/api/docs>. Atualize o contrato junto com cada rota nova e troque `x-yantra-status` para `implemented`. Um teste confere esse campo.
+2. O agente usa um token Sanctum do equipamento (`Device`), com a habilidade `agent`. As rotas autenticadas usam os middlewares `auth:sanctum`, `agent` e `agent.signed`.
+3. As respostas são assinadas com Ed25519 sobre `<timestamp>.<corpo>`. Crie a chave de desenvolvimento com `php artisan yantra:signing-key --write`.
+4. As regras de negócio têm códigos (R-ACE, R-LIC, R-EXA, R-SEG) na especificação do painel. Cite o código no comentário do código e no teste que confere a regra.
+
 O bucket tem duas pastas: `previews/<cliente>/<exame>/` (apagada no fim do exame e, como segunda garantia, pela regra de ciclo de vida de 1 dia) e `agent-releases/<versão>/` (instaladores do agente).
 
 <laravel-boost-guidelines>
