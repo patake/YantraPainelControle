@@ -5,7 +5,7 @@ Esta máquina não tem PHP, Composer, Node nem PostgreSQL. Todo o ambiente roda 
 1. Suba o ambiente com `docker compose up -d`.
 2. Rode os comandos PHP no container `app`: `docker compose exec -T app php artisan ...`, `docker compose exec -T app composer ...`, `docker compose exec -T app vendor/bin/pint ...`.
 3. Acesse o painel em <http://localhost:8000>. O PostgreSQL 18 responde em localhost:5432 (banco `yantra_painel`, usuário `yantra`).
-4. Use o disco `s3` do Laravel para os arquivos. Em produção, o disco aponta para o bucket da AWS (`sa-east-1`). Em desenvolvimento, aponta para o LocalStack em <http://localhost.localstack.cloud:4566> (bucket `yantra-painel`, criado por `docker/localstack/init-s3.sh`).
+4. Use o disco `s3` do Laravel para os arquivos. Em produção, o disco aponta para o bucket da AWS (`sa-east-1`). Em desenvolvimento, aponta para o LocalStack em <http://localhost.localstack.cloud:4566> (bucket `yantra-painel`, criado por `docker/localstack/init-s3.sh`). Veja os arquivos no navegador em <http://localhost:8081> (s3manager).
 
 Cuidado: o LocalStack community não confere permissões e não guarda os objetos depois de reiniciar. Teste no LocalStack só o fluxo de gravação e leitura. A regra de acesso privado só vale no S3 da AWS.
 

@@ -71,5 +71,21 @@ services:
       timeout: 5s
       retries: 20
 
+  # Navegador de arquivos do S3 local: http://localhost:8081.
+  s3-browser:
+    image: cloudlena/s3manager:v0.5.0
+    environment:
+      ENDPOINT: localhost.localstack.cloud:4566
+      ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+      SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+      REGION: ${AWS_DEFAULT_REGION:-sa-east-1}
+      USE_SSL: "false"
+      ALLOW_DELETE: "true"
+    ports:
+      - "8081:8080"
+    depends_on:
+      s3:
+        condition: service_healthy
+
 volumes:
   pgdata:
