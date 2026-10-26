@@ -5,7 +5,7 @@ namespace Tests\Feature\Staff;
 use App\Enums\UserRole;
 use App\Models\Client;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\UserInvitation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -15,7 +15,7 @@ class UsersTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_creates_an_operator_linked_to_clients_and_sends_the_password_link(): void
+    public function test_admin_creates_an_operator_linked_to_clients_and_sends_the_invitation(): void
     {
         Notification::fake();
         $client = Client::factory()->create();
@@ -32,7 +32,8 @@ class UsersTest extends TestCase
         $user = User::where('email', 'operador@hospital.com.br')->sole();
         $this->assertSame(UserRole::Operator, $user->role);
         $this->assertSame([$client->id], $user->clients()->pluck('clients.id')->all());
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, UserInvitation::class);
+        $this->assertNotNull($user->invited_at);
     }
 
     public function test_requires_at_least_one_client_for_an_operator(): void

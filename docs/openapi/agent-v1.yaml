@@ -310,6 +310,41 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /settings/hotkey:
+    put:
+      tags: [Parâmetros]
+      summary: Grava a combinação de teclas da captura de tela
+      description: |
+        O assistente do agente testa a combinação no Windows e envia a combinação aceita (E7).
+        A combinação tem Ctrl, Alt ou Win e uma tecla: letra, número, F1 a F12 ou PrintScreen (R-EXA-11).
+        O painel grava a combinação no formato canônico (por exemplo, "Ctrl+Shift+Y") e aumenta a versão dos parâmetros.
+      operationId: putHotkey
+      x-yantra-stage: E7
+      x-yantra-status: implemented
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hotkey]
+              properties:
+                hotkey: { type: string, maxLength: 40, example: ctrl + y }
+      responses:
+        '200':
+          description: Combinação gravada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [hotkey, config_version]
+                properties:
+                  hotkey: { type: string, example: Ctrl+Y }
+                  config_version: { type: integer, example: 8 }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   /exams/{exam}/data:
     post:
       tags: [Exames]

@@ -6,7 +6,6 @@ use App\Enums\ErpType;
 use App\Enums\ExamFieldKind;
 use App\Models\Client;
 use App\Models\ExamType;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
@@ -30,6 +29,8 @@ class ImportYantraCardioExam
         'Informação Complementar' => ExamFieldKind::Info,
     ];
 
+    public function __construct(private SaveExamType $save) {}
+
     public function handle(Client $client, string $examJson, string $parametersJson): ExamType
     {
         $exam = $this->decode($examJson, 'EXAME.json')['EXAME'][0] ?? null;
@@ -45,10 +46,11 @@ class ImportYantraCardioExam
         $folder = $readings->firstWhere('DESCRICAO', self::FOLDER_PARAMETER)['VALOR'] ?? '';
         $procedure = $readings->firstWhere('DESCRICAO', 'NR_PROCEDIMENTO')['VALOR'] ?? null;
 
-        return DB::transaction(function () use ($client, $exam, $readings, $folder, $procedure) {
-            $examType = ExamType::firstOrNew(['client_id' => $client->id, 'name' => $exam['DESCRICAO']]);
+        $examType = ExamType::firstOrNew(['client_id' => $client->id, 'name' => $exam['DESCRICAO']]);
 
-            $examType->fill([
+        return $this->save->handle(
+            $examType,
+            [
                 'erp_type' => $this->erpType((string) ($exam['TIPO'] ?? '')),
                 'procedure_code' => $procedure,
                 'destination_folder' => $folder,
@@ -65,23 +67,14 @@ class ImportYantraCardioExam
                     'logout_after_close' => (bool) ($exam['DESLOGARAPOSFECHAR'] ?? false),
                 ],
                 'active' => (bool) ($exam['ATIVO'] ?? true),
-            ]);
-
-            if ($examType->exists) {
-                $examType->version++;
-            }
-
-            $examType->save();
-            $examType->fields()->delete();
-
+            ],
             $readings
                 ->reject(fn (array $reading) => ($reading['DESCRICAO'] ?? '') === self::FOLDER_PARAMETER)
                 ->sortBy('SEQUENCIA')
                 ->values()
-                ->each(fn (array $reading, int $index) => $examType->fields()->create($this->field($reading, $index)));
-
-            return $examType->load('fields');
-        });
+                ->map(fn (array $reading, int $index) => $this->field($reading, $index))
+                ->all(),
+        );
     }
 
     /**

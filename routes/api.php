@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Agent\ActivationController;
 use App\Http\Controllers\Api\Agent\CommandController;
 use App\Http\Controllers\Api\Agent\ConfigController;
 use App\Http\Controllers\Api\Agent\ExamFileController;
+use App\Http\Controllers\Api\Agent\HotkeyController;
 use App\Http\Controllers\Api\Agent\LatestUpdateController;
 use App\Http\Controllers\Api\Agent\LicenseController;
 use App\Http\Controllers\Api\Agent\PingController;
@@ -37,6 +38,7 @@ Route::prefix('v1/agent')->name('agent.')->middleware('api.log')->group(function
             Route::get('commands', [CommandController::class, 'index'])->name('commands.index');
             Route::post('commands/{command}/result', [CommandController::class, 'result'])->name('commands.result');
             Route::post('exams/{exam}/files', [ExamFileController::class, 'store'])->name('exams.files.store');
+            Route::put('settings/hotkey', HotkeyController::class)->name('settings.hotkey');
         });
     });
 });

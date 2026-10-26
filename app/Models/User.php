@@ -36,6 +36,7 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'active' => 'boolean',
             'last_login_at' => 'datetime',
+            'invited_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

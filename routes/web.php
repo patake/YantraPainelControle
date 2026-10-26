@@ -1,9 +1,16 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/inicio');
+
+// Convite do usuário novo (R-ACE-13). O controller confere a assinatura do link.
+Route::middleware('guest')->group(function () {
+    Route::get('convite/{user}', [InvitationController::class, 'show'])->name('invitation.show');
+    Route::post('convite/{user}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitation.store');
+});
 
 Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () {
     Route::get('inicio', HomeController::class)->name('home');
@@ -25,6 +32,7 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
         Route::livewire('exames', 'pages::staff.exams.index')->name('exams.index');
         Route::livewire('exames/novo', 'pages::staff.exams.form')->name('exams.create');
         Route::livewire('exames/{examType}', 'pages::staff.exams.form')->name('exams.edit');
+        Route::livewire('exames/{examType}/versoes/{version}', 'pages::staff.exams.version')->whereNumber('version')->name('exams.versions.show');
 
         Route::livewire('usuarios', 'pages::staff.users.index')->name('users.index');
         Route::livewire('usuarios/novo', 'pages::staff.users.form')->name('users.create');

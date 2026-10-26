@@ -163,6 +163,23 @@ class ExamCycleTest extends TestCase
         $this->assertSame(1, AgentCommand::where('type', CommandType::CancelExam)->count());
     }
 
+    /**
+     * E7: a captura de tela (PNG) aparece na conferência ao lado dos PDFs.
+     */
+    public function test_review_shows_the_screen_capture_image_next_to_the_pdf(): void
+    {
+        $exam = $this->openExam();
+        $exam->files()->create(['kind' => ExamFileKind::Pdf, 'original_name' => 'ecg.pdf', 'preview_path' => $exam->previewFolder().'/a.pdf', 'sha256' => str_repeat('a', 64), 'size_bytes' => 3]);
+        $png = $exam->files()->create(['kind' => ExamFileKind::Png, 'original_name' => 'captura.png', 'preview_path' => $exam->previewFolder().'/b.png', 'sha256' => str_repeat('b', 64), 'size_bytes' => 3]);
+        $this->actingAs($this->operator);
+
+        Livewire::test('pages::app.exams.show', ['exam' => $exam])
+            ->assertSee('ecg.pdf')
+            ->assertSee('captura.png')
+            ->set('previewFileId', $png->id)
+            ->assertSeeHtml('<img src="https://s3.test/'.$png->preview_path.'"');
+    }
+
     public function test_history_shows_only_the_exams_of_the_linked_clients(): void
     {
         $this->openExam(ExamStatus::Completed)->update(['patient' => ['PACIENTE' => 'PACIENTE PROPRIO']]);

@@ -1,11 +1,11 @@
 <?php
 
+use App\Actions\Exams\SaveExamType;
 use App\Enums\ErpType;
 use App\Enums\ExamFieldKind;
 use App\Models\Client;
 use App\Models\ExamType;
 use Flux\Flux;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -73,6 +73,17 @@ new class extends Component {
         return $this->examId ? ExamType::with('client')->find($this->examId) : null;
     }
 
+    /**
+     * Histórico das versões do exame, da mais nova para a mais antiga (R-EXA-10).
+     */
+    #[Computed]
+    public function versions()
+    {
+        return $this->examId
+            ? $this->exam->versions()->with('user:id,name')->latest('version')->get(['id', 'exam_type_id', 'version', 'restored_from', 'user_id', 'created_at'])
+            : collect();
+    }
+
     #[Computed]
     public function clients()
     {
@@ -113,7 +124,7 @@ new class extends Component {
     /**
      * Salva o exame e as leituras numa versão nova. Só o administrador altera (R-EXA-3).
      */
-    public function save(): void
+    public function save(SaveExamType $save): void
     {
         abort_unless(auth()->user()->isAdmin(), 403);
 
@@ -147,10 +158,9 @@ new class extends Component {
             'fields.*.placeholder' => __('marcador'),
         ]);
 
-        $exam = DB::transaction(function () use ($validated) {
-            $exam = $this->examId ? ExamType::findOrFail($this->examId) : new ExamType;
-
-            $exam->fill([
+        $exam = $save->handle(
+            $this->examId ? ExamType::findOrFail($this->examId) : new ExamType,
+            [
                 'client_id' => $validated['clientId'],
                 'name' => $validated['name'],
                 'erp_type' => $validated['erpType'],
@@ -163,31 +173,18 @@ new class extends Component {
                 'sql_insert' => $this->sql['insert'],
                 'sql_image' => $this->sql['image'],
                 'sql_update' => $this->sql['update'],
-            ]);
-
-            if ($exam->exists) {
-                $exam->version++;
-            }
-
-            $exam->save();
-            $exam->fields()->delete();
-
-            foreach (array_values($this->fields) as $position => $field) {
-                $exam->fields()->create([
-                    'kind' => $field['kind'],
-                    'placeholder' => strtoupper(trim($field['placeholder'])),
-                    'db_column' => $field['db_column'] ?: null,
-                    'label' => $field['label'] ?: null,
-                    'input' => $field['input'],
-                    'default_value' => $field['default_value'] !== '' ? $field['default_value'] : null,
-                    'options' => $field['options'] ?? null,
-                    'required' => (bool) $field['required'],
-                    'position' => $position,
-                ]);
-            }
-
-            return $exam;
-        });
+            ],
+            array_map(fn (array $field) => [
+                'kind' => $field['kind'],
+                'placeholder' => strtoupper(trim($field['placeholder'])),
+                'db_column' => $field['db_column'] ?: null,
+                'label' => $field['label'] ?: null,
+                'input' => $field['input'],
+                'default_value' => $field['default_value'] !== '' ? $field['default_value'] : null,
+                'options' => $field['options'] ?? null,
+                'required' => (bool) $field['required'],
+            ], array_values($this->fields)),
+        );
 
         Flux::toast(variant: 'success', text: __('Exame salvo na versão :version.', ['version' => $exam->version]));
 
@@ -336,4 +333,45 @@ new class extends Component {
             </div>
         @endif
     </form>
+
+    @if ($examId)
+        <flux:card class="flex flex-col gap-4">
+            <div>
+                <flux:heading size="lg">{{ __('Versões') }}</flux:heading>
+                <flux:text class="mt-1">{{ __('Cada gravação cria uma versão. O histórico nunca perde versões.') }}</flux:text>
+            </div>
+
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>{{ __('Versão') }}</flux:table.column>
+                    <flux:table.column>{{ __('Data') }}</flux:table.column>
+                    <flux:table.column>{{ __('Usuário') }}</flux:table.column>
+                    <flux:table.column>{{ __('Origem') }}</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @forelse ($this->versions as $version)
+                        <flux:table.row :key="$version->id">
+                            <flux:table.cell class="font-mono text-xs">
+                                v{{ $version->version }}
+                                @if ($version->version === $this->exam->version)
+                                    <flux:badge size="sm" color="green" class="ms-1">{{ __('Atual') }}</flux:badge>
+                                @endif
+                            </flux:table.cell>
+                            <flux:table.cell class="tabular-nums">{{ $version->created_at->format('d/m/Y H:i') }}</flux:table.cell>
+                            <flux:table.cell>{{ $version->user?->name ?? __('Sistema') }}</flux:table.cell>
+                            <flux:table.cell>{{ $version->restored_from ? __('Restaurada da versão :version', ['version' => $version->restored_from]) : __('Gravação') }}</flux:table.cell>
+                            <flux:table.cell align="end">
+                                <flux:button size="sm" :href="route('staff.exams.versions.show', [$this->exam, $version->version])" wire:navigate>{{ __('Ver diferenças') }}</flux:button>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @empty
+                        <flux:table.row>
+                            <flux:table.cell colspan="5">{{ __('Nenhuma versão no histórico.') }}</flux:table.cell>
+                        </flux:table.row>
+                    @endforelse
+                </flux:table.rows>
+            </flux:table>
+        </flux:card>
+    @endif
 </div>

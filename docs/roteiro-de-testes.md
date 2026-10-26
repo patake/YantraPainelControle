@@ -1,6 +1,6 @@
 # Roteiro de testes
 
-Este roteiro confere à mão o que o painel já faz (E0 a E6). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
+Este roteiro confere à mão o que o painel já faz (E0 a E7). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
 
 ## 0. Preparação
 
@@ -103,7 +103,7 @@ Endereços:
 1. Abra **Usuários** e clique em **Novo usuário**. Escolha o papel Operador e salve sem marcar um cliente.
 2. Resultado esperado: o painel exige pelo menos um cliente.
 3. Marque o cliente criado no teste 3.1 e salve.
-4. Resultado esperado: o usuário aparece na lista com o 2FA pendente. O link para criar a senha vai para o log, como no teste 2.4.
+4. Resultado esperado: o usuário aparece na lista com o 2FA pendente e o selo **Convite pendente**. O e-mail do convite vai para o log. Use o teste 3.6 para abrir o link.
 
 ### 3.3 Permissões do suporte
 
@@ -121,6 +121,25 @@ Endereços:
 
 1. Como administrador, abra **Log e auditoria**.
 2. Resultado esperado: cada criação e alteração dos testes anteriores aparece com o usuário, a data e o IP. Em **Ver valores**, o painel mostra o valor antigo e o valor novo. Senhas aparecem só como `[alterado]`.
+
+### 3.6 Convite do usuário novo (R-ACE-13)
+
+O e-mail de desenvolvimento vai para o log, com o texto codificado. O comando abaixo monta o mesmo link do convite pendente.
+
+1. Gere o link do convite. Troque `<e-mail>` pelo e-mail do usuário do teste 3.2:
+   ```
+   docker compose exec -T app php artisan tinker --execute '$u = App\Models\User::where("email", "<e-mail>")->sole(); echo URL::temporarySignedRoute("invitation.show", $u->invited_at->copy()->addDays(7), ["user" => $u->id, "sent" => $u->invited_at->getTimestamp()]);'
+   ```
+2. Abra o link numa janela anônima.
+3. Resultado esperado: a tela **Criar a senha** mostra o nome e o e-mail do usuário.
+4. Tente a senha `curta123456` (11 caracteres).
+5. Resultado esperado: o painel recusa a senha.
+6. Crie uma senha com 12 caracteres ou mais.
+7. Resultado esperado: o login abre com a mensagem para entrar e cadastrar o 2FA. O selo **Convite pendente** sai da lista de usuários.
+8. Abra o link de novo.
+9. Resultado esperado: a tela mostra **Convite inválido**. O link vale uma vez.
+10. Crie outro usuário. Na lista, clique em **Reenviar convite** e gere o link de novo (passo 1).
+11. Resultado esperado: o link novo abre a tela **Criar a senha**. O link anterior mostra **Convite inválido**.
 
 ## 4. Licenças e equipamentos (E2 e E3)
 
@@ -203,10 +222,23 @@ Cuidado: o S3 local apaga os arquivos quando o container reinicia.
 6. Repita a consulta com o cabeçalho `-H 'If-None-Match: "<versão>"'`.
 7. Resultado esperado: a resposta é 304, sem corpo.
 
+### 6.4 Versões do exame (R-EXA-10)
+
+1. Como administrador, abra o exame Eletro (teste 6.1).
+2. Resultado esperado: o card **Versões** mostra a versão atual com o selo **Atual**.
+3. Mude uma linha do SQL de consulta e adicione uma leitura. Clique em **Salvar versão**.
+4. Resultado esperado: o card **Versões** mostra uma versão nova, com a data e o seu nome.
+5. Clique em **Ver diferenças** na versão nova.
+6. Resultado esperado: a linha removida aparece em vermelho, com `−`. A linha nova aparece em verde, com `+`. A tabela de leituras mostra a leitura nova.
+7. Volte e clique em **Ver diferenças** na versão anterior. Clique em **Restaurar a versão** e confirme.
+8. Resultado esperado: o painel cria uma versão nova com o conteúdo da versão restaurada. A coluna Origem diz **Restaurada da versão** e o número da versão. As versões anteriores continuam no histórico.
+9. Entre como `suporte@weega.com.br` e abra as diferenças de uma versão.
+10. Resultado esperado: o suporte vê as diferenças, mas não vê o botão **Restaurar**.
+
 ### 6.3 Contrato da API
 
 1. Abra <http://localhost:8000/api/docs>.
-2. Resultado esperado: o Swagger mostra as 11 rotas da API do agente. As rotas implementadas têm `x-yantra-status: implemented`.
+2. Resultado esperado: o Swagger mostra as 12 rotas da API do agente. As rotas implementadas têm `x-yantra-status: implemented`.
 
 ## 7. Ciclo do exame (E6)
 
@@ -279,3 +311,36 @@ Cuidado: o comando de início expira em 5 minutos. Depois disso, o resultado rec
 1. Inicie outro exame (teste 7.1, passos 1 a 8) e envie um preview (teste 7.2).
 2. Na tela do exame, clique em **Cancelar exame**.
 3. Resultado esperado: o exame fica **Cancelado** e o preview some do S3. A busca de comandos traz um comando `cancel_exam`.
+
+## 8. Captura de tela (E7)
+
+Os comandos abaixo simulam o assistente de teclas do agente. Troque `<token>` pelo token do teste 4.2.
+
+### 8.1 Combinação de teclas (R-EXA-11)
+
+1. Grave uma combinação sem Ctrl, Alt ou Win:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"Shift+Y"}'
+   ```
+2. Resultado esperado: a resposta é 422. A mensagem pede Ctrl, Alt ou Win e uma tecla.
+3. Grave a combinação em minúsculas:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/hotkey -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"hotkey":"shift + ctrl + y"}'
+   ```
+4. Resultado esperado: a resposta traz `"hotkey":"Ctrl+Shift+Y"` e a versão nova dos parâmetros.
+5. Abra o equipamento SALA-TESTE em **Equipamentos**.
+6. Resultado esperado: o campo **Teclas da captura de tela** mostra `Ctrl+Shift+Y`.
+7. Consulte os parâmetros (teste 6.2, passo 4).
+8. Resultado esperado: a resposta traz `"hotkey":"Ctrl+Shift+Y"`.
+
+### 8.2 Captura na conferência
+
+1. Inicie um exame e envie um PDF (testes 7.1 e 7.2).
+2. Envie uma imagem PNG como captura de tela. Troque `<exame>` pelo `exam_id`:
+   ```
+   curl -s -o /c/temp/captura.png https://placehold.co/800x450.png
+   curl -s -X POST http://localhost:8000/api/v1/agent/exams/<exame>/files -H "Authorization: Bearer <token>" -H "Accept: application/json" -F kind=png -F sha256=$(sha256sum /c/temp/captura.png | cut -d' ' -f1) -F file=@/c/temp/captura.png
+   ```
+3. Resultado esperado: a resposta é 201. Na tela do exame, a lista de arquivos mostra o PDF e a captura.
+4. Clique na captura.
+5. Resultado esperado: o preview mostra a imagem. O PDF continua na lista para a gravação.

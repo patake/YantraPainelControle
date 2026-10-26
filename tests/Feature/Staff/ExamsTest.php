@@ -159,4 +159,24 @@ class ExamsTest extends TestCase
             ->call('save')
             ->assertHasErrors('examTypeIds.0');
     }
+
+    /**
+     * R-EXA-11: a combinação de teclas da captura de tela tem Ctrl, Alt ou Win.
+     */
+    public function test_admin_saves_the_screen_capture_keys_in_the_canonical_format(): void
+    {
+        $device = Device::factory()->active()->create();
+        $this->actingAs($this->admin());
+
+        Livewire::test('pages::staff.devices.show', ['device' => $device])
+            ->set('hotkey', 'Shift+Y')
+            ->call('save')
+            ->assertHasErrors('hotkey')
+            ->set('hotkey', 'shift+ctrl+y')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertSet('hotkey', 'Ctrl+Shift+Y');
+
+        $this->assertSame('Ctrl+Shift+Y', $device->settings()->value('hotkey'));
+    }
 }

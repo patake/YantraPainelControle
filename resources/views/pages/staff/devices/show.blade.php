@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Device;
+use App\Rules\ValidHotkey;
 use App\Support\DeviceConfig;
+use App\Support\Hotkey;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -58,7 +60,7 @@ new class extends Component {
             'captureBasePath' => ['required', 'string', 'max:255'],
             'networkUsername' => ['nullable', 'string', 'max:255'],
             'networkPassword' => ['nullable', 'string', 'max:255'],
-            'hotkey' => ['nullable', 'string', 'max:40'],
+            'hotkey' => ['nullable', 'string', 'max:40', new ValidHotkey],
             'serialPort' => ['nullable', 'string', 'max:20', 'regex:/^COM\d{1,3}$/i'],
             'examTypeIds' => ['array'],
             'examTypeIds.*' => ['integer', 'in:'.$this->availableExams->pluck('id')->join(',')],
@@ -67,13 +69,14 @@ new class extends Component {
         ], [
             'captureBasePath' => __('pasta base das capturas'),
             'serialPort' => __('porta serial'),
+            'hotkey' => __('teclas da captura de tela'),
         ]);
 
         $settings = $this->device->settings;
         $settings->fill([
             'capture_base_path' => $this->captureBasePath,
             'network_username' => $this->networkUsername !== '' ? $this->networkUsername : null,
-            'hotkey' => $this->hotkey !== '' ? $this->hotkey : null,
+            'hotkey' => $this->hotkey !== '' ? Hotkey::normalize($this->hotkey) : null,
             'serial_port' => $this->serialPort !== '' ? strtoupper($this->serialPort) : null,
         ]);
 
@@ -87,6 +90,7 @@ new class extends Component {
         }
 
         $settings->save();
+        $this->hotkey = (string) $settings->hotkey;
 
         $before = $this->device->examTypes()->pluck('exam_types.id')->sort()->values()->all();
         $this->device->examTypes()->sync($this->examTypeIds);

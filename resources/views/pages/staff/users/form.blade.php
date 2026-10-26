@@ -1,10 +1,10 @@
 <?php
 
+use App\Actions\Users\SendUserInvitation;
 use App\Enums\UserRole;
 use App\Models\Client;
 use App\Models\User;
 use Flux\Flux;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -100,7 +100,7 @@ new class extends Component {
         $this->syncClients($user, $validated['role'] === UserRole::Operator->value ? $validated['clientIds'] : []);
 
         if ($isNew) {
-            Password::broker()->sendResetLink(['email' => $user->email]);
+            app(SendUserInvitation::class)->handle($user);
         }
 
         Flux::toast(variant: 'success', text: $isNew
@@ -174,7 +174,7 @@ new class extends Component {
 
         @unless ($userId)
             <flux:callout icon="envelope" variant="secondary">
-                {{ __('O usuário recebe um e-mail para criar a senha. No primeiro login, o painel pede o cadastro do 2FA.') }}
+                {{ __('O usuário recebe um e-mail para criar a senha. O convite vale por 7 dias. No primeiro login, o painel pede o cadastro do 2FA.') }}
             </flux:callout>
         @endunless
 

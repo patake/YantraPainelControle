@@ -63,6 +63,16 @@ class ExamType extends Model
     }
 
     /**
+     * Histórico das versões (R-EXA-10).
+     *
+     * @return HasMany<ExamTypeVersion, $this>
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(ExamTypeVersion::class);
+    }
+
+    /**
      * @return BelongsToMany<Device, $this>
      */
     public function devices(): BelongsToMany

@@ -16,10 +16,18 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - O painel apaga os previews no fim do exame e a cada hora apaga os previews com mais de 24 horas (R-EXA-7).
 - Tarefa `commands:expire`, a cada minuto: um início expirado põe o exame em falha, e uma gravação expirada devolve o exame para revisão.
 - Telas do operador: Novo exame, tela do exame com o preview e Histórico.
+- Convite do usuário novo, válido por 7 dias (R-ACE-13). Um convite novo invalida o link anterior. A lista de usuários mostra o convite pendente e o botão **Reenviar convite**.
+- Histórico das versões do exame (R-EXA-10). Cada gravação e cada importação guardam uma cópia da versão. A tela **Diferenças da versão** mostra os SQLs linha a linha, as leituras e os dados alterados.
+- O administrador restaura uma versão antiga. A restauração cria uma versão nova, e o histórico nunca perde versões.
+- Captura de tela (E7): rota `PUT /api/v1/agent/settings/hotkey`, em que o assistente do agente grava a combinação de teclas aceita pelo Windows.
+- A combinação de teclas tem Ctrl, Alt ou Win e uma tecla (R-EXA-11). O painel grava a combinação no formato canônico, por exemplo `Ctrl+Shift+Y`.
+- A conferência do exame mostra a captura de tela (PNG) ao lado dos PDFs.
 
 ### Alterado
 
 - O contrato OpenAPI mudou de `resources/openapi/` para `docs/openapi/`. O endereço `/api/docs` continua o mesmo.
+- O usuário novo cria a senha pelo link do convite (7 dias), e não mais pelo link de troca de senha (60 minutos).
+- As regras R-ACE-7 a R-EXA-10 da seção 5.1 da especificação foram confirmadas em 26/10/2026.
 
 ## E5 · Exames, conexão do ERP e parametrização — 26/10/2026
 

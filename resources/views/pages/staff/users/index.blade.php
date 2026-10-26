@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Users\SendUserInvitation;
 use App\Enums\UserRole;
 use App\Models\User;
 use Flux\Flux;
@@ -58,6 +59,20 @@ new #[Title('Usuários')] class extends Component {
 
         Flux::toast(variant: 'success', text: __('2FA reiniciado. O usuário cadastra o 2FA no próximo login.'));
     }
+
+    /**
+     * Envia um convite novo, válido por 7 dias. O link anterior perde o valor (R-ACE-13).
+     */
+    public function resendInvitation(int $userId, SendUserInvitation $send): void
+    {
+        $user = User::findOrFail($userId);
+        $this->authorize('update', $user);
+        abort_if($user->invited_at === null, 409);
+
+        $send->handle($user);
+
+        Flux::toast(variant: 'success', text: __('Convite enviado de novo. O link vale por 7 dias.'));
+    }
 }; ?>
 
 <div class="flex flex-col gap-6">
@@ -108,6 +123,9 @@ new #[Title('Usuários')] class extends Component {
                         @unless ($user->active)
                             <flux:badge size="sm" color="zinc">{{ __('Desativado') }}</flux:badge>
                         @endunless
+                        @if ($user->invited_at)
+                            <flux:badge size="sm" color="amber">{{ __('Convite pendente') }}</flux:badge>
+                        @endif
                     </flux:table.cell>
                     <flux:table.cell>{{ $user->isStaff() ? __('Todos') : ($user->clients->pluck('trade_name')->join(', ') ?: '—') }}</flux:table.cell>
                     <flux:table.cell>
@@ -126,6 +144,9 @@ new #[Title('Usuários')] class extends Component {
                                 @endif
                             @endcan
                             @can('update', $user)
+                                @if ($user->invited_at)
+                                    <flux:button size="sm" variant="ghost" wire:click="resendInvitation({{ $user->id }})">{{ __('Reenviar convite') }}</flux:button>
+                                @endif
                                 <flux:button size="sm" :href="route('staff.users.edit', $user)" wire:navigate>{{ __('Editar') }}</flux:button>
                             @endcan
                         </div>
