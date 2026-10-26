@@ -78,8 +78,14 @@ new class extends Component {
             'network_username' => $this->networkUsername !== '' ? $this->networkUsername : null,
             // Só o sistema de captura de tela (YO SRC) usa a combinação de teclas (R-EXA-11).
             'hotkey' => $this->device->capturesScreen() ? Hotkey::normalize($this->hotkey) : null,
-            'serial_port' => $this->serialPort !== '' ? strtoupper($this->serialPort) : null,
+            // Só o sistema de porta serial (YO HUB) usa a porta COM (R-EXA-13).
+            'serial_port' => $this->device->readsSerialPort() && $this->serialPort !== '' ? strtoupper($this->serialPort) : null,
         ]);
+
+        // O adaptador e o teste do agente valem só para a porta que o agente informou.
+        if ($settings->isDirty('serial_port')) {
+            $settings->fill(['serial_adapter' => null, 'serial_test_passed' => null, 'serial_reported_at' => null]);
+        }
 
         // A senha só muda quando o administrador digita uma senha nova.
         if ($this->networkPassword !== '') {
@@ -151,7 +157,23 @@ new class extends Component {
                 @if ($this->device->capturesScreen())
                     <flux:input wire:model="hotkey" :label="__('Teclas da captura de tela')" placeholder="Ctrl+Y" :description="__('O padrão é Ctrl+Y. O gestor do hospital também troca a combinação. Use Ctrl, Alt ou Win e uma tecla: letra, número, F1 a F12 ou PrintScreen.')" />
                 @endif
-                <flux:input wire:model="serialPort" :label="__('Porta serial')" placeholder="COM3" />
+                @if ($this->device->readsSerialPort())
+                    @php($serial = $this->device->settings)
+                    <div class="flex flex-col gap-2">
+                        <flux:input wire:model="serialPort" :label="__('Porta serial')" placeholder="COM3" :description="__('O assistente da porta COM do agente informa a porta. Troque aqui só se precisar.')" />
+                        @if ($serial?->serial_reported_at)
+                            <flux:text class="text-xs">
+                                {{ __('Informada pelo agente em :date', ['date' => $serial->serial_reported_at->format('d/m/Y H:i')]) }}
+                                · {{ $serial->serial_adapter ?? __('adaptador sem nome') }}
+                                · @if ($serial->serial_test_passed)
+                                    <span class="text-green-700 dark:text-green-400">{{ __('teste de comunicação aprovado') }}</span>
+                                @else
+                                    <span class="text-amber-700 dark:text-amber-400">{{ __('teste de comunicação sem dados') }}</span>
+                                @endif
+                            </flux:text>
+                        @endif
+                    </div>
+                @endif
             </flux:card>
 
             <flux:card class="flex flex-col gap-4">

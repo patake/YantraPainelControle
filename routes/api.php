@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Agent\LicenseController;
 use App\Http\Controllers\Api\Agent\PingController;
 use App\Http\Controllers\Api\Agent\PublicKeyController;
 use App\Http\Controllers\Api\Agent\RegisterController;
+use App\Http\Controllers\Api\Agent\SerialPortController;
 use App\Http\Controllers\ApiDocsController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,7 @@ Route::prefix('v1/agent')->name('agent.')->middleware('api.log')->group(function
             Route::post('exams/{exam}/files', [ExamFileController::class, 'store'])->name('exams.files.store');
             Route::post('exams/{exam}/data', [ExamDataController::class, 'store'])->name('exams.data.store');
             Route::put('settings/hotkey', HotkeyController::class)->name('settings.hotkey');
+            Route::put('settings/serial-port', SerialPortController::class)->name('settings.serial-port');
         });
     });
 });

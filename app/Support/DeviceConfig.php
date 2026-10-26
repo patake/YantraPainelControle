@@ -55,7 +55,8 @@ final class DeviceConfig
             ] : null,
             // Só o sistema de captura de tela (YO SRC) usa a combinação de teclas (R-EXA-11).
             'hotkey' => $device->capturesScreen() ? ($settings?->hotkey ?? Hotkey::DEFAULT) : null,
-            'serial_port' => $settings?->serial_port,
+            // Só o sistema de porta serial (YO HUB) usa a porta COM (R-EXA-13).
+            'serial_port' => $device->readsSerialPort() ? $settings?->serial_port : null,
             'erp_connection' => $connection ? [
                 'db_type' => $connection->db_type->value,
                 'host' => $connection->host,

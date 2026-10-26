@@ -92,6 +92,14 @@ class Device extends Model implements AuthenticatableContract, AuthorizableContr
     }
 
     /**
+     * Equipamento do sistema de porta serial (YO HUB). Só ele usa a porta COM (R-EXA-13).
+     */
+    public function readsSerialPort(): bool
+    {
+        return $this->system?->feature === SystemFeature::Serial;
+    }
+
+    /**
      * @return HasOne<DeviceSetting, $this>
      */
     public function settings(): HasOne

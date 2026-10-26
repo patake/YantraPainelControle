@@ -130,7 +130,7 @@ class ExamsTest extends TestCase
 
     public function test_admin_enables_exams_on_a_device_and_raises_the_parameter_version(): void
     {
-        $device = Device::factory()->active()->create();
+        $device = Device::factory()->active()->serialReader()->create();
         $exam = ExamType::factory()->create(['client_id' => $device->client_id]);
         $this->actingAs($this->admin());
 

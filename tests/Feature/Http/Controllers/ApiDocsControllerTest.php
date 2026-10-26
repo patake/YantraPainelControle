@@ -21,7 +21,7 @@ class ApiDocsControllerTest extends TestCase
         $this->assertSame('3.1.0', $spec['openapi']);
         $this->assertSame([
             '/public-key', '/ping', '/activation/{cnpj}', '/register', '/license', '/config',
-            '/commands', '/commands/{command}/result', '/exams/{exam}/files', '/settings/hotkey', '/exams/{exam}/data',
+            '/commands', '/commands/{command}/result', '/exams/{exam}/files', '/settings/hotkey', '/settings/serial-port', '/exams/{exam}/data',
             '/updates/latest',
         ], array_keys($spec['paths']));
     }

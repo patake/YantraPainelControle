@@ -58,6 +58,16 @@ class DeviceFactory extends Factory
     }
 
     /**
+     * Equipamento do sistema de porta serial (YO HUB).
+     */
+    public function serialReader(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'system_id' => System::factory()->serial(),
+        ]);
+    }
+
+    /**
      * Equipamento do sistema de captura de tela (YO SRC).
      */
     public function screenCapture(): static

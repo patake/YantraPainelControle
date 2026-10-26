@@ -352,6 +352,52 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /settings/serial-port:
+    put:
+      tags: [Parâmetros]
+      summary: Grava a porta COM que o assistente do agente achou
+      description: |
+        O assistente compara as portas antes e depois de o técnico ligar o cabo, escolhe a porta nova
+        e testa a comunicação (E8). O painel grava a porta na parametrização e aumenta a versão dos parâmetros.
+        Sem esta rota, o próximo GET /config trocaria a porta escolhida no computador pela porta antiga do painel.
+        Só o sistema de porta serial (YO HUB) usa a porta COM (R-EXA-13). Nos outros sistemas, a rota
+        responde 409, e os parâmetros trazem serial_port null.
+      operationId: putSerialPort
+      x-yantra-stage: E8
+      x-yantra-status: implemented
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [port, test_passed]
+              properties:
+                port: { type: string, pattern: '^COM[0-9]{1,3}$', example: COM4 }
+                adapter: { type: string, nullable: true, maxLength: 255, example: Prolific USB-to-Serial }
+                test_passed: { type: boolean, description: 'true quando o teste recebeu dados do equipamento.' }
+      responses:
+        '200':
+          description: Porta gravada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [port, test_passed, config_version]
+                properties:
+                  port: { type: string, example: COM4 }
+                  adapter: { type: string, nullable: true }
+                  test_passed: { type: boolean }
+                  config_version: { type: integer, example: 9 }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: O sistema do equipamento não usa a porta serial.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   /exams/{exam}/data:
     post:
       tags: [Exames]

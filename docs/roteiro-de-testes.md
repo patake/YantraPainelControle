@@ -267,7 +267,7 @@ Cuidado: o S3 local apaga os arquivos quando o container reinicia.
 ### 6.3 Contrato da API
 
 1. Abra <http://localhost:8000/api/docs>.
-2. Resultado esperado: o Swagger mostra as 12 rotas da API do agente. Todas as rotas têm `x-yantra-status: implemented`.
+2. Resultado esperado: o Swagger mostra as 13 rotas da API do agente. Todas as rotas têm `x-yantra-status: implemented`.
 
 ## 7. Ciclo do exame (E6)
 
@@ -435,3 +435,30 @@ Só o sistema Yantra Screen Capture (YO SRC) usa a combinação de teclas. O see
 5. Resultado esperado: a resposta é 422. O nome do campo usa letras maiúsculas, números e "_".
 6. Se o exame tem uma informação complementar com o marcador `FC`, confira o campo.
 7. Resultado esperado: o campo mostra `72`. Um valor que o operador digitou antes não muda.
+
+### 9.3 Porta COM pelo assistente do agente (R-EXA-13)
+
+Só o sistema de porta serial (YO HUB) usa a porta COM.
+
+1. Grave uma porta com o token do SALA-TESTE (teste 4.2), que é do sistema YC_PRT:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/serial-port -H "Authorization: Bearer <token>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"port":"COM3","test_passed":true}'
+   ```
+2. Resultado esperado: a resposta é 409. O sistema do equipamento não usa a porta serial.
+3. No cliente do teste 3.1, aba **Licenças**, adicione um pacote do sistema YO_HUB com quantidade 1.
+4. Registre um equipamento YO HUB:
+   ```
+   curl -s -X POST http://localhost:8000/api/v1/agent/register -H "Accept: application/json" -H "Content-Type: application/json" -d '{"cnpj":"11222333000181","system":"YO_HUB","signature":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","hostname":"HOLTER-TESTE"}'
+   ```
+5. Resultado esperado: a resposta traz o `token`. Nos passos abaixo, troque `<token-hub>` por esse token.
+6. Grave a porta que o assistente achou:
+   ```
+   curl -s -X PUT http://localhost:8000/api/v1/agent/settings/serial-port -H "Authorization: Bearer <token-hub>" -H "Accept: application/json" -H "Content-Type: application/json" -d '{"port":"com4","adapter":"Prolific USB-to-Serial","test_passed":true}'
+   ```
+7. Resultado esperado: a resposta traz `"port":"COM4"` e a versão nova dos parâmetros.
+8. Abra o equipamento HOLTER-TESTE em **Equipamentos**.
+9. Resultado esperado: o campo **Porta serial** mostra `COM4`. Abaixo do campo, o painel mostra a data, o adaptador e "teste de comunicação aprovado".
+10. Troque a porta para `COM5` e salve.
+11. Resultado esperado: a linha do adaptador e do teste some, porque esses dados eram da porta anterior.
+12. Abra o equipamento SALA-TESTE.
+13. Resultado esperado: a parametrização não mostra o campo **Porta serial**, porque o sistema não é o YO HUB.

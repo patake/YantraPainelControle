@@ -12,7 +12,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Parametrização de um equipamento: pastas, credencial de rede, teclas e porta serial.
  */
-#[Fillable(['device_id', 'capture_base_path', 'network_username', 'network_password', 'hotkey', 'serial_port'])]
+#[Fillable([
+    'device_id', 'capture_base_path', 'network_username', 'network_password', 'hotkey',
+    'serial_port', 'serial_adapter', 'serial_test_passed', 'serial_reported_at',
+])]
 #[Hidden(['network_password'])]
 class DeviceSetting extends Model
 {
@@ -28,6 +31,8 @@ class DeviceSetting extends Model
     {
         return [
             'network_password' => 'encrypted',
+            'serial_test_passed' => 'boolean',
+            'serial_reported_at' => 'datetime',
         ];
     }
 

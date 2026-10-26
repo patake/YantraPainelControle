@@ -32,6 +32,8 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - O painel aceita só a sintaxe que o motor RE2 do agente aceita (R-EXA-12). O valor extraído é o primeiro grupo entre parênteses ou, sem grupo, o trecho inteiro.
 - Card **Testar as regras da porta serial**: o usuário cola um conteúdo recebido e vê o valor de cada regra, sem gravar nada.
 - Rota `POST /api/v1/agent/exams/{id}/data`: o agente envia os dados extraídos. Um envio novo junta os campos aos campos já recebidos.
+- Rota `PUT /api/v1/agent/settings/serial-port`: o assistente da porta COM do agente grava no painel a porta que achou, o nome do adaptador e o resultado do teste de comunicação. Sem a rota, o próximo `GET /config` trocaria a porta escolhida no computador pela porta antiga do painel.
+- Só o sistema de porta serial (YO HUB) usa a porta COM (R-EXA-13). Nos outros sistemas, a rota responde 409, e os parâmetros trazem `serial_port` null. A tela do equipamento mostra a porta, o adaptador e o resultado do teste só no YO HUB. Uma troca manual da porta apaga o adaptador e o teste da porta anterior.
 - A tela do exame mostra o card **Dados da porta serial**. Um dado preenche a informação complementar com o mesmo marcador, se o operador ainda não mudou o valor.
 - Atalhos `dev` (Git Bash) e `dev.bat` (cmd e PowerShell) para os comandos do Docker: `up`, `artisan`, `test`, `pint`, `assets`, `psql`, `fresh` e outros. Veja a lista com `./dev help`.
 - Teste automático do cadastro do 2FA com um código TOTP real.

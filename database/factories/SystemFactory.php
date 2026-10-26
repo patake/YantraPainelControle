@@ -27,6 +27,17 @@ class SystemFactory extends Factory
     }
 
     /**
+     * Sistema de porta serial, como o YO HUB.
+     */
+    public function serial(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'code' => 'T'.fake()->unique()->numerify('###').'_HUB',
+            'feature' => SystemFeature::Serial,
+        ]);
+    }
+
+    /**
      * Sistema de captura de tela, como o YO SRC.
      */
     public function screen(): static
