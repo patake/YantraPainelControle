@@ -62,7 +62,7 @@ Endereços:
 ### 2.1 Primeiro login com cadastro do 2FA
 
 1. Abra <http://localhost:8000> e entre com `admin@weega.com.br` e `password`.
-2. Resultado esperado: o botÃ£o **Entrar** fica desativado e mostra o Ã­cone de carregamento. Depois, o painel abre a tela de Segurança, com o aviso de que o 2FA é obrigatório.
+2. Resultado esperado: o botão **Entrar** fica desativado e mostra o ícone de carregamento. Depois, o painel abre a tela de Segurança, com o aviso de que o 2FA é obrigatório.
 
 Cuidado: o código do aplicativo depende da hora do celular e da hora do servidor. Deixe a data e a hora do celular e do Windows no modo automático. Antes do teste, rode `./dev clock`: a hora do container e a hora da internet precisam ser iguais. Com 3 horas de diferença, por exemplo, nenhum código vale. Não saia da tela de Segurança antes de digitar o código: ao voltar para a tela, o painel apaga o cadastro não confirmado, e o QR code lido perde o valor.
 
