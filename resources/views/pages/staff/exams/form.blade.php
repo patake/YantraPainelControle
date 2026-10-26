@@ -1,0 +1,339 @@
+<?php
+
+use App\Enums\ErpType;
+use App\Enums\ExamFieldKind;
+use App\Models\Client;
+use App\Models\ExamType;
+use Flux\Flux;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
+use Livewire\Component;
+
+new class extends Component {
+    #[Locked]
+    public ?int $examId = null;
+
+    public ?int $clientId = null;
+    public string $name = '';
+    public string $erpType = 'DELPHI';
+    public string $procedureCode = '';
+    public string $destinationFolder = '';
+    public bool $active = true;
+
+    /** @var array<string, bool> */
+    public array $printOptions = ['print' => false, 'print_one_page' => false, 'complete_after_file' => false];
+
+    /** @var array<string, string> */
+    public array $sql = ['query' => '', 'auth' => '', 'insert' => '', 'image' => '', 'update' => ''];
+
+    public string $sqlTab = 'query';
+
+    /** @var list<array<string, mixed>> */
+    public array $fields = [];
+
+    public function mount(?ExamType $examType = null): void
+    {
+        abort_unless(auth()->user()->isStaff(), 403);
+
+        if ($examType?->exists) {
+            $this->examId = $examType->id;
+            $this->clientId = $examType->client_id;
+            $this->name = $examType->name;
+            $this->erpType = $examType->erp_type->value;
+            $this->procedureCode = (string) $examType->procedure_code;
+            $this->destinationFolder = $examType->destination_folder;
+            $this->active = $examType->active;
+            $this->printOptions = array_merge($this->printOptions, $examType->print_options ?? []);
+            $this->sql = [
+                'query' => $examType->sql_query, 'auth' => $examType->sql_auth, 'insert' => $examType->sql_insert,
+                'image' => $examType->sql_image, 'update' => $examType->sql_update,
+            ];
+            $this->fields = $examType->fields->map(fn ($field) => [
+                'kind' => $field->kind->value,
+                'placeholder' => $field->placeholder,
+                'db_column' => (string) $field->db_column,
+                'label' => (string) $field->label,
+                'input' => $field->input,
+                'default_value' => (string) $field->default_value,
+                'options' => $field->options,
+                'required' => $field->required,
+            ])->all();
+
+            return;
+        }
+
+        abort_unless(auth()->user()->isAdmin(), 403);
+    }
+
+    #[Computed]
+    public function exam(): ?ExamType
+    {
+        return $this->examId ? ExamType::with('client')->find($this->examId) : null;
+    }
+
+    #[Computed]
+    public function clients()
+    {
+        return Client::orderBy('trade_name')->get(['id', 'trade_name']);
+    }
+
+    /**
+     * Marcadores {X} dos 5 SQLs e se cada um tem leitura cadastrada.
+     *
+     * @return array<string, bool>
+     */
+    #[Computed]
+    public function placeholders(): array
+    {
+        $exam = new ExamType([
+            'sql_query' => $this->sql['query'], 'sql_auth' => $this->sql['auth'], 'sql_insert' => $this->sql['insert'],
+            'sql_image' => $this->sql['image'], 'sql_update' => $this->sql['update'],
+        ]);
+        $configured = array_column($this->fields, 'placeholder');
+
+        return collect($exam->placeholders())->mapWithKeys(fn ($key) => [$key => in_array($key, $configured, true)])->all();
+    }
+
+    public function addField(): void
+    {
+        $this->fields[] = [
+            'kind' => ExamFieldKind::Internal->value, 'placeholder' => '', 'db_column' => '', 'label' => '',
+            'input' => 'text', 'default_value' => '', 'options' => null, 'required' => false,
+        ];
+    }
+
+    public function removeField(int $index): void
+    {
+        unset($this->fields[$index]);
+        $this->fields = array_values($this->fields);
+    }
+
+    /**
+     * Salva o exame e as leituras numa versão nova. Só o administrador altera (R-EXA-3).
+     */
+    public function save(): void
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+
+        $validated = $this->validate([
+            'clientId' => ['required', 'integer', 'exists:clients,id'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('exam_types', 'name')->where('client_id', $this->clientId)->ignore($this->examId)],
+            'erpType' => ['required', Rule::enum(ErpType::class)],
+            'procedureCode' => ['nullable', 'string', 'max:50'],
+            'destinationFolder' => ['required', 'string', 'max:255'],
+            'active' => ['boolean'],
+            'sql.*' => ['required', 'string'],
+            'fields.*.kind' => ['required', Rule::enum(ExamFieldKind::class)],
+            'fields.*.placeholder' => ['required', 'string', 'max:60', 'distinct'],
+            'fields.*.db_column' => ['nullable', 'string', 'max:60'],
+            'fields.*.label' => ['nullable', 'string', 'max:255'],
+            'fields.*.input' => ['required', Rule::in(['text', 'number', 'date', 'select', 'textarea'])],
+            'fields.*.default_value' => ['nullable', 'string', 'max:255'],
+            'fields.*.required' => ['boolean'],
+        ], [
+            'name.unique' => __('O cliente já tem um exame com este nome.'),
+            'fields.*.placeholder.distinct' => __('Cada marcador aparece uma vez.'),
+        ], [
+            'clientId' => __('cliente'),
+            'name' => __('nome'),
+            'destinationFolder' => __('pasta de destino'),
+            'sql.query' => __('SQL de consulta'),
+            'sql.auth' => __('SQL de autenticação'),
+            'sql.insert' => __('SQL de gravação'),
+            'sql.image' => __('SQL de imagem'),
+            'sql.update' => __('SQL de atualização'),
+            'fields.*.placeholder' => __('marcador'),
+        ]);
+
+        $exam = DB::transaction(function () use ($validated) {
+            $exam = $this->examId ? ExamType::findOrFail($this->examId) : new ExamType;
+
+            $exam->fill([
+                'client_id' => $validated['clientId'],
+                'name' => $validated['name'],
+                'erp_type' => $validated['erpType'],
+                'procedure_code' => $validated['procedureCode'] ?: null,
+                'destination_folder' => $validated['destinationFolder'],
+                'active' => $validated['active'],
+                'print_options' => array_map('boolval', $this->printOptions),
+                'sql_query' => $this->sql['query'],
+                'sql_auth' => $this->sql['auth'],
+                'sql_insert' => $this->sql['insert'],
+                'sql_image' => $this->sql['image'],
+                'sql_update' => $this->sql['update'],
+            ]);
+
+            if ($exam->exists) {
+                $exam->version++;
+            }
+
+            $exam->save();
+            $exam->fields()->delete();
+
+            foreach (array_values($this->fields) as $position => $field) {
+                $exam->fields()->create([
+                    'kind' => $field['kind'],
+                    'placeholder' => strtoupper(trim($field['placeholder'])),
+                    'db_column' => $field['db_column'] ?: null,
+                    'label' => $field['label'] ?: null,
+                    'input' => $field['input'],
+                    'default_value' => $field['default_value'] !== '' ? $field['default_value'] : null,
+                    'options' => $field['options'] ?? null,
+                    'required' => (bool) $field['required'],
+                    'position' => $position,
+                ]);
+            }
+
+            return $exam;
+        });
+
+        Flux::toast(variant: 'success', text: __('Exame salvo na versão :version.', ['version' => $exam->version]));
+
+        $this->redirectRoute('staff.exams.edit', $exam, navigate: true);
+    }
+
+    public function render()
+    {
+        return $this->view()->title($this->examId ? $this->name : __('Novo exame'));
+    }
+}; ?>
+
+<div class="flex flex-col gap-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <flux:breadcrumbs>
+                <flux:breadcrumbs.item :href="route('staff.exams.index')" wire:navigate>{{ __('Exames') }}</flux:breadcrumbs.item>
+                <flux:breadcrumbs.item>{{ $examId ? $name : __('Novo') }}</flux:breadcrumbs.item>
+            </flux:breadcrumbs>
+            <flux:heading size="xl" level="1" class="mt-2">{{ $examId ? $name : __('Novo exame') }}</flux:heading>
+            @if ($this->exam)
+                <flux:text class="mt-1">{{ __('Versão :version · :client', ['version' => $this->exam->version, 'client' => $this->exam->client->trade_name]) }}</flux:text>
+            @endif
+        </div>
+    </div>
+
+    @unless (auth()->user()->isAdmin())
+        <flux:callout icon="lock-closed" variant="secondary">{{ __('Só o administrador altera exames e SQLs. Você vê o cadastro só para consulta.') }}</flux:callout>
+    @endunless
+
+    <form wire:submit="save" class="flex flex-col gap-6">
+        <fieldset @disabled(! auth()->user()->isAdmin()) class="flex flex-col gap-6">
+            <flux:card class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                <flux:select wire:model="clientId" :label="__('Cliente')" :placeholder="__('Escolha o cliente')" :disabled="(bool) $examId">
+                    @foreach ($this->clients as $client)
+                        <flux:select.option :value="$client->id">{{ $client->trade_name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:input wire:model="name" :label="__('Nome')" />
+                <flux:select wire:model="erpType" :label="__('Tipo do ERP')">
+                    <flux:select.option value="TASY_HTML5">TASY HTML5</flux:select.option>
+                    <flux:select.option value="DELPHI">TASY Delphi</flux:select.option>
+                    <flux:select.option value="JAVA">TASY Java</flux:select.option>
+                </flux:select>
+                <flux:input wire:model="procedureCode" :label="__('Código do procedimento')" class="font-mono" />
+                <div class="sm:col-span-2">
+                    <flux:input wire:model="destinationFolder" :label="__('Pasta de destino')" placeholder="\\servidor\yantra\ECG" class="font-mono" />
+                </div>
+                <div class="flex flex-col gap-3 sm:col-span-2 xl:col-span-3">
+                    <flux:text>{{ __('Arquivo final: <pasta>\<PACIENTE>-<NASCIMENTO>\aaaa\mm\dd\<Exame>-<ATENDIMENTO>-<n>.pdf') }}</flux:text>
+                    <div class="flex flex-wrap gap-6">
+                        <flux:switch wire:model="active" :label="__('Exame ativo')" />
+                        <flux:checkbox wire:model="printOptions.print" :label="__('Imprimir em papel')" />
+                        <flux:checkbox wire:model="printOptions.print_one_page" :label="__('Imprimir só uma página')" />
+                        <flux:checkbox wire:model="printOptions.complete_after_file" :label="__('Concluir após gerar o arquivo')" />
+                    </div>
+                </div>
+            </flux:card>
+
+            <flux:card class="flex flex-col gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <flux:heading size="lg">{{ __('SQLs no ERP') }}</flux:heading>
+                    <flux:text>{{ __('O agente troca cada marcador {X} por uma variável de ligação (bind).') }}</flux:text>
+                </div>
+                <flux:navbar class="border-b border-zinc-200 dark:border-zinc-700">
+                    @foreach (['query' => __('1 · Consulta'), 'auth' => __('2 · Autenticação'), 'insert' => __('3 · Gravação'), 'image' => __('4 · Imagem'), 'update' => __('5 · Atualização')] as $key => $label)
+                        <flux:navbar.item wire:click="$set('sqlTab', '{{ $key }}')" :current="$sqlTab === $key">{{ $label }}</flux:navbar.item>
+                    @endforeach
+                </flux:navbar>
+                <div class="grid gap-4 xl:grid-cols-[1fr_16rem]">
+                    <flux:textarea wire:model.blur="sql.{{ $sqlTab }}" rows="14" class="font-mono text-xs" />
+                    <div class="flex flex-col gap-2 text-sm">
+                        <flux:heading>{{ __('Marcadores encontrados') }}</flux:heading>
+                        @forelse ($this->placeholders as $placeholder => $configured)
+                            <div class="flex items-center justify-between gap-2" wire:key="ph-{{ $placeholder }}">
+                                <code class="font-mono text-xs">{{ '{'.$placeholder.'}' }}</code>
+                                <span class="text-xs {{ $configured ? 'text-green-700 dark:text-green-400' : 'text-zinc-500' }}">{{ $configured ? __('leitura') : __('do paciente ou do ERP') }}</span>
+                            </div>
+                        @empty
+                            <flux:text>{{ __('Nenhum marcador.') }}</flux:text>
+                        @endforelse
+                    </div>
+                </div>
+                @error('sql.*') <flux:text class="text-red-600">{{ $message }}</flux:text> @enderror
+            </flux:card>
+
+            <flux:card class="flex flex-col gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <flux:heading size="lg">{{ __('Leituras') }}</flux:heading>
+                        <flux:text>{{ __('Parâmetro interno: valor fixo do exame. Parâmetro e Filtro: o operador informa antes da consulta. Informação complementar: o operador informa na confirmação.') }}</flux:text>
+                    </div>
+                    <flux:button size="sm" icon="plus" wire:click="addField">{{ __('Adicionar leitura') }}</flux:button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[56rem] text-sm">
+                        <thead>
+                            <tr class="text-start text-xs text-zinc-500">
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Tipo') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Marcador') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Rótulo') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Coluna (CAMPOBD)') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Entrada') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Valor padrão') }}</th>
+                                <th class="py-2 pe-2 text-start font-medium">{{ __('Obrigatório') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($fields as $index => $field)
+                                <tr class="border-t border-zinc-100 align-top dark:border-zinc-700" wire:key="field-{{ $index }}">
+                                    <td class="py-2 pe-2">
+                                        <flux:select wire:model="fields.{{ $index }}.kind" size="sm">
+                                            @foreach (App\Enums\ExamFieldKind::cases() as $kind)
+                                                <flux:select.option :value="$kind->value">{{ $kind->label() }}</flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                    </td>
+                                    <td class="py-2 pe-2"><flux:input wire:model="fields.{{ $index }}.placeholder" size="sm" class="font-mono" /></td>
+                                    <td class="py-2 pe-2"><flux:input wire:model="fields.{{ $index }}.label" size="sm" /></td>
+                                    <td class="py-2 pe-2"><flux:input wire:model="fields.{{ $index }}.db_column" size="sm" class="font-mono" /></td>
+                                    <td class="py-2 pe-2">
+                                        <flux:select wire:model="fields.{{ $index }}.input" size="sm">
+                                            @foreach (['text' => __('texto'), 'number' => __('número'), 'date' => __('data'), 'select' => __('lista'), 'textarea' => __('texto longo')] as $value => $label)
+                                                <flux:select.option :value="$value">{{ $label }}</flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                    </td>
+                                    <td class="py-2 pe-2"><flux:input wire:model="fields.{{ $index }}.default_value" size="sm" /></td>
+                                    <td class="py-2 pe-2"><flux:checkbox wire:model="fields.{{ $index }}.required" /></td>
+                                    <td class="py-2"><flux:button size="sm" variant="ghost" icon="trash" wire:click="removeField({{ $index }})" :aria-label="__('Remover leitura')" /></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @error('fields.*') <flux:text class="text-red-600">{{ $message }}</flux:text> @enderror
+            </flux:card>
+        </fieldset>
+
+        @if (auth()->user()->isAdmin())
+            <div class="flex justify-end gap-2">
+                <flux:button :href="route('staff.exams.index')" wire:navigate>{{ __('Cancelar') }}</flux:button>
+                <flux:button type="submit" variant="primary">{{ $examId ? __('Salvar versão :version', ['version' => ($this->exam?->version ?? 0) + 1]) : __('Salvar') }}</flux:button>
+            </div>
+        @endif
+    </form>
+</div>

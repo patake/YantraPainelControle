@@ -1,0 +1,22 @@
+{
+    "EXAME": [
+        {
+            "TIPO": "TASY Delphi",
+            "BANCODADOS": "Tasy",
+            "DESCRICAO": "Teste",
+            "QUERYGRAVACAO": "INSERT INTO LAUDO_PACIENTE ( NR_SEQUENCIA, NR_ATENDIMENTO, DT_ENTRADA_UNIDADE, NM_USUARIO, DT_ATUALIZACAO, CD_MEDICO_RESP, DS_TITULO_LAUDO, NR_LAUDO, QT_IMAGEM, DT_LAUDO, IE_NORMAL, DT_EXAME, NR_PRESCRICAO, NR_SEQ_PRESCRICAO, NR_SEQ_PROC, NM_MEDICO_SOLICITANTE ) SELECT {SEQUENCE}.nextval, {ATENDIMENTO}, SYSTIMESTAMP, SUBSTR({NM_PROFISSIONAL}, 1, 15), SYSTIMESTAMP, {CD_MEDICO}, '{TITULO_LAUDO}', (SELECT NVL(MAX(NR_LAUDO) + 1, 1) FROM LAUDO_PACIENTE WHERE NR_ATENDIMENTO = {ATENDIMENTO}), 1, SYSTIMESTAMP, 'N', SYSTIMESTAMP, {NR_PRESCRICAO}, (SELECT NVL(MAX(NR_SEQ_PRESCRICAO) + 1, 1) FROM LAUDO_PACIENTE WHERE NR_ATENDIMENTO = {ATENDIMENTO}), {NR_SEQUENCIA_PACIENTE}, {MEDICO} FROM DUAL",
+            "QUERYLEITURA": "select tasy.obter_nome_paciente(p.nr_atendimento) PACIENTE, to_char(tasy.obter_data_nascto_pf(p.cd_pessoa_fisica), 'dd/mm/yyyy') DATA_NASCIMENTO, tasy.obter_medico_prescricao(p.nr_prescricao,'') MEDICO, p.cd_medico CD_MEDICO, p.dt_prescricao DATAP, tasy.obter_desc_setor_atend(pp.cd_setor_atendimento) SETOR, p.nr_atendimento ATENDIMENTO, p.nr_prescricao NR_PRESCRICAO, pp.nr_sequencia NR_SEQUENCIA, pac.nr_sequencia NR_SEQUENCIA_PACIENTE from tasy.prescr_medica p, tasy.prescr_procedimento pp, tasy.procedimento_paciente pac where p.nr_prescricao = pp.nr_prescricao and p.nr_prescricao = pac.nr_prescricao and p.dt_prescricao >= sysdate - {DIAS_PESQUISA} and pp.ie_status_execucao IN ({STATUS_EXECUCAO}) and pp.cd_procedimento = {NR_PROCEDIMENTO} and pac.cd_procedimento = {NR_PROCEDIMENTO}",
+            "QUERYGRAVACAOIMAGENS": "INSERT INTO LAUDO_PACIENTE_IMAGEM ( NR_SEQUENCIA, NR_SEQ_IMAGEM, DT_ATUALIZACAO, NM_USUARIO, DS_ARQUIVO_IMAGEM ) VALUES ( {SEQ_GRAVACAO}, 1, SYSTIMESTAMP, SUBSTR({NM_PROFISSIONAL}, 1, 15), {ARQUIVO} )",
+            "QUERYAUTENTICACAO": "SELECT A.CD_PESSOA_FISICA CD_PROFISSIONAL, A.NM_USUARIO NM_PROFISSIONAL, A.DS_USUARIO DS_PROFISSIONAL FROM tasy.USUARIO A WHERE UPPER(A.NM_USUARIO) = UPPER({USUARIO}) AND TASY.OBTER_SHA2(UPPER({SENHA})||A.DS_TEC, 256) = A.DS_SENHA AND A.IE_SITUACAO = 'A'",
+            "QUERYGRAVACAOANEXOS": "UPDATE PRESCR_PROCEDIMENTO SET IE_STATUS_EXECUCAO = {ATUALIZAR_STATUS_EXECUCAO} WHERE NR_PRESCRICAO = {NR_PRESCRICAO} AND NR_SEQUENCIA = {NR_SEQUENCIA}",
+            "JUSTIFICAR": true,
+            "IMPRIMIR": false,
+            "ULTIMOSELECIONADO": true,
+            "FECHARAPOSIMPRIMIR": false,
+            "DESLOGARAPOSFECHAR": false,
+            "IMPRIMIRUMAPAGINA": true,
+            "FORMULARIO": false,
+            "ATIVO": 1,
+        }
+    ]
+}

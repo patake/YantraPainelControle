@@ -49,6 +49,8 @@ return new class extends Migration
             $table->foreignId('exam_type_id')->constrained()->cascadeOnDelete();
             $table->string('kind', 20);
             $table->string('placeholder', 60);
+            // Coluna da consulta usada por Parâmetro e Filtro (CAMPOBD do Yantra Cardio 3.0).
+            $table->string('db_column', 60)->nullable();
             $table->string('label')->nullable();
             $table->string('input', 20)->default('text');
             $table->string('default_value')->nullable();

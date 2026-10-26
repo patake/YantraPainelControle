@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Support\DeviceConfig;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
@@ -36,5 +37,14 @@ class DeviceSetting extends Model
     public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
+    }
+
+    /**
+     * Cada alteração aumenta a versão dos parâmetros dos equipamentos afetados (E5).
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn (DeviceSetting $model) => DeviceConfig::bumpDevice($model->device_id));
+        static::deleted(fn (DeviceSetting $model) => DeviceConfig::bumpDevice($model->device_id));
     }
 }

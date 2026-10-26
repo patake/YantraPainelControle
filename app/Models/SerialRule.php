@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Support\DeviceConfig;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,5 +29,14 @@ class SerialRule extends Model
     public function examType(): BelongsTo
     {
         return $this->belongsTo(ExamType::class);
+    }
+
+    /**
+     * Cada alteração aumenta a versão dos parâmetros dos equipamentos afetados (E5).
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn (SerialRule $model) => DeviceConfig::bumpExamType($model->exam_type_id));
+        static::deleted(fn (SerialRule $model) => DeviceConfig::bumpExamType($model->exam_type_id));
     }
 }

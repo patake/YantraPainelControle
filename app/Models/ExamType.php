@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ErpType;
 use App\Models\Concerns\Auditable;
+use App\Support\DeviceConfig;
 use Database\Factories\ExamTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -81,5 +82,14 @@ class ExamType extends Model
         preg_match_all('/\{([A-Za-z0-9_]+)\}/', $sql, $matches);
 
         return array_values(array_unique($matches[1]));
+    }
+
+    /**
+     * Cada alteração aumenta a versão dos parâmetros dos equipamentos afetados (E5).
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn (ExamType $model) => DeviceConfig::bumpExamType($model->id));
+        static::deleted(fn (ExamType $model) => DeviceConfig::bumpExamType($model->id));
     }
 }

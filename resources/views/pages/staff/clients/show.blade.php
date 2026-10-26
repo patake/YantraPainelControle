@@ -1,7 +1,11 @@
 <?php
 
+use App\Enums\CommandType;
+use App\Enums\DbType;
 use App\Enums\UserRole;
+use App\Models\AgentCommand;
 use App\Models\Client;
+use App\Models\ErpConnection;
 use App\Models\License;
 use App\Models\System;
 use App\Models\User;
@@ -25,6 +29,7 @@ new class extends Component {
     {
         $this->authorize('view', $client);
         $this->clientId = $client->id;
+        $this->updatedTab($this->tab);
     }
 
     #[Computed]
@@ -187,6 +192,104 @@ new class extends Component {
         Flux::toast(variant: 'success', text: __('Pacote de licenças salvo.'));
     }
 
+    public string $erpHost = '';
+
+    public ?int $erpPort = 1521;
+
+    public string $erpServiceName = '';
+
+    public string $erpUsername = '';
+
+    public string $erpPassword = '';
+
+    public ?string $erpTestDeviceId = null;
+
+    public function updatedTab(string $tab): void
+    {
+        if ($tab === 'erp' && $this->client->erpConnection) {
+            $connection = $this->client->erpConnection;
+            $this->erpHost = $connection->host;
+            $this->erpPort = $connection->port;
+            $this->erpServiceName = $connection->service_name;
+            $this->erpUsername = $connection->username;
+        }
+    }
+
+    /**
+     * Uma conexão do ERP por cliente. Só o administrador altera conexões (R-EXA-3).
+     */
+    public function saveErpConnection(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $connection = $this->client->erpConnection ?? new ErpConnection(['client_id' => $this->clientId, 'db_type' => DbType::Oracle]);
+
+        $this->validate([
+            'erpHost' => ['required', 'string', 'max:255'],
+            'erpPort' => ['required', 'integer', 'between:1,65535'],
+            'erpServiceName' => ['required', 'string', 'max:255'],
+            'erpUsername' => ['required', 'string', 'max:255'],
+            'erpPassword' => [$connection->exists ? 'nullable' : 'required', 'string', 'max:255'],
+        ], [], [
+            'erpHost' => __('servidor'),
+            'erpPort' => __('porta'),
+            'erpServiceName' => __('service name'),
+            'erpUsername' => __('usuário do banco'),
+            'erpPassword' => __('senha do banco'),
+        ]);
+
+        $connection->fill([
+            'host' => $this->erpHost,
+            'port' => $this->erpPort,
+            'service_name' => $this->erpServiceName,
+            'username' => $this->erpUsername,
+        ]);
+
+        // A senha só muda quando o administrador digita uma senha nova.
+        if ($this->erpPassword !== '') {
+            $connection->password = $this->erpPassword;
+        }
+
+        $connection->save();
+
+        $this->reset('erpPassword');
+        unset($this->client);
+
+        Flux::toast(variant: 'success', text: __('Conexão do ERP salva.'));
+    }
+
+    /**
+     * O teste roda num equipamento do hospital: a nuvem não alcança o banco do ERP.
+     */
+    public function testErpConnection(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $this->validate(
+            ['erpTestDeviceId' => ['required', 'string', Rule::in($this->devices->pluck('id')->all())]],
+            [],
+            ['erpTestDeviceId' => __('equipamento')],
+        );
+
+        AgentCommand::create([
+            'device_id' => $this->erpTestDeviceId,
+            'type' => CommandType::TestErp,
+            'expires_at' => now()->addSeconds(CommandType::TestErp->ttlSeconds()),
+        ]);
+
+        Flux::toast(text: __('Teste enviado. O resultado aparece quando o agente responder.'));
+    }
+
+    #[Computed]
+    public function lastErpTest(): ?AgentCommand
+    {
+        return AgentCommand::with('device:id,hostname')
+            ->where('type', CommandType::TestErp)
+            ->whereIn('device_id', $this->devices->pluck('id'))
+            ->latest()
+            ->first();
+    }
+
     public function render()
     {
         return $this->view()->title($this->client->trade_name);
@@ -221,6 +324,7 @@ new class extends Component {
         <flux:navbar.item wire:click="$set('tab', 'usuarios')" :current="$tab === 'usuarios'" :badge="$this->client->users_count">{{ __('Usuários') }}</flux:navbar.item>
         <flux:navbar.item wire:click="$set('tab', 'licencas')" :current="$tab === 'licencas'" :badge="$this->client->licenses_count">{{ __('Licenças') }}</flux:navbar.item>
         <flux:navbar.item wire:click="$set('tab', 'equipamentos')" :current="$tab === 'equipamentos'" :badge="$this->client->devices_count">{{ __('Equipamentos') }}</flux:navbar.item>
+        <flux:navbar.item wire:click="$set('tab', 'erp')" :current="$tab === 'erp'">{{ __('Conexão do ERP') }}</flux:navbar.item>
     </flux:navbar>
 
     @if ($tab === 'dados')
@@ -340,6 +444,66 @@ new class extends Component {
                 </flux:table.rows>
             </flux:table>
         </flux:card>
+    @endif
+
+    @if ($tab === 'erp')
+        <div class="grid gap-6 xl:grid-cols-[3fr_2fr]">
+            <flux:card>
+                <form wire:submit="saveErpConnection" class="flex flex-col gap-4">
+                    <div>
+                        <flux:heading size="lg">{{ __('Dados da conexão') }}</flux:heading>
+                        <flux:text>{{ __('O painel não acessa o banco. Só o agente usa a conexão, dentro da rede do hospital.') }}</flux:text>
+                    </div>
+                    <fieldset @disabled(! auth()->user()->can('update', $this->client)) class="grid gap-4 sm:grid-cols-2">
+                        <flux:input :value="'Oracle'" :label="__('Tipo de banco')" disabled />
+                        <flux:input wire:model="erpHost" :label="__('Servidor')" class="font-mono" />
+                        <flux:input wire:model="erpPort" type="number" :label="__('Porta')" class="font-mono" />
+                        <flux:input wire:model="erpServiceName" :label="__('Service name')" class="font-mono" />
+                        <flux:input wire:model="erpUsername" :label="__('Usuário do banco')" class="font-mono" />
+                        <flux:input wire:model="erpPassword" type="password" autocomplete="new-password" :label="__('Senha do banco')"
+                            :placeholder="$this->client->erpConnection ? __('Gravada e criptografada. Digite para trocar.') : ''" />
+                    </fieldset>
+                    @can('update', $this->client)
+                        <div class="flex justify-end">
+                            <flux:button type="submit" variant="primary">{{ __('Salvar conexão') }}</flux:button>
+                        </div>
+                    @endcan
+                </form>
+            </flux:card>
+
+            <flux:card class="flex flex-col gap-4">
+                <div>
+                    <flux:heading size="lg">{{ __('Testar conexão') }}</flux:heading>
+                    <flux:text>{{ __('O teste roda num equipamento do hospital, porque a nuvem não alcança o banco.') }}</flux:text>
+                </div>
+                @can('update', $this->client)
+                    <form wire:submit="testErpConnection" class="flex flex-wrap items-end gap-2">
+                        <div class="min-w-48 flex-1">
+                            <flux:select wire:model="erpTestDeviceId" :label="__('Equipamento')" :placeholder="__('Escolha o equipamento')">
+                                @foreach ($this->devices as $device)
+                                    <flux:select.option :value="$device->id">{{ $device->hostname }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        </div>
+                        <flux:button type="submit" :disabled="! $this->client->erpConnection">{{ __('Testar agora') }}</flux:button>
+                    </form>
+                @endcan
+                @if ($this->lastErpTest)
+                    <div class="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-700">
+                        <div class="font-medium">{{ __('Último teste') }} · {{ $this->lastErpTest->device->hostname }} · {{ $this->lastErpTest->created_at->format('d/m H:i') }}</div>
+                        <div class="mt-1 text-zinc-600 dark:text-zinc-400">
+                            {{ match ($this->lastErpTest->status->value) {
+                                'pending' => __('Aguardando o agente.'),
+                                'delivered' => __('O agente recebeu o comando.'),
+                                'done' => __('Conexão funcionando.').' '.($this->lastErpTest->result['data']['server_version'] ?? ''),
+                                'failed' => __('Falhou:').' '.($this->lastErpTest->result['error'] ?? ''),
+                                'expired' => __('O agente não respondeu a tempo.'),
+                            } }}
+                        </div>
+                    </div>
+                @endif
+            </flux:card>
+        </div>
     @endif
 
     @if ($tab === 'equipamentos')

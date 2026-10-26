@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAgentDevice;
+use App\Http\Middleware\EnsureDeviceIsLicensed;
 use App\Http\Middleware\EnsureTwoFactorIsConfirmed;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'agent' => EnsureAgentDevice::class,
+            'agent.licensed' => EnsureDeviceIsLicensed::class,
             'agent.signed' => SignAgentResponse::class,
             'api.log' => LogApiRequest::class,
             'role' => EnsureUserHasRole::class,

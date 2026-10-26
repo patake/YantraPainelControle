@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DbType;
 use App\Models\Concerns\Auditable;
+use App\Support\DeviceConfig;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
@@ -35,5 +36,14 @@ class ErpConnection extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Cada alteração aumenta a versão dos parâmetros dos equipamentos afetados (E5).
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn (ErpConnection $model) => DeviceConfig::bumpClient($model->client_id));
+        static::deleted(fn (ErpConnection $model) => DeviceConfig::bumpClient($model->client_id));
     }
 }

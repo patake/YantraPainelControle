@@ -20,6 +20,11 @@ Route::middleware(['auth', 'active', 'two-factor.required'])->group(function () 
         Route::livewire('equipamentos', 'pages::staff.devices.index')->name('devices.index');
         Route::livewire('sistemas', 'pages::staff.systems.index')->name('systems.index');
         Route::livewire('versoes', 'pages::staff.releases.index')->name('releases.index');
+        Route::livewire('equipamentos/{device}', 'pages::staff.devices.show')->name('devices.show');
+
+        Route::livewire('exames', 'pages::staff.exams.index')->name('exams.index');
+        Route::livewire('exames/novo', 'pages::staff.exams.form')->name('exams.create');
+        Route::livewire('exames/{examType}', 'pages::staff.exams.form')->name('exams.edit');
 
         Route::livewire('usuarios', 'pages::staff.users.index')->name('users.index');
         Route::livewire('usuarios/novo', 'pages::staff.users.form')->name('users.create');

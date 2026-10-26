@@ -1,0 +1,67 @@
+{
+    "LEITURAEXAME": [
+        {
+            "DESCRICAO": "PASTA",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "T:\\Yantra\\Eletrocardiogograma",
+            "CAMPOBD": null,
+            "SEQUENCIA": 0,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "NR_PROCEDIMENTO",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "40101010",
+            "CAMPOBD": null,
+            "SEQUENCIA": 1,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "DIAS_PESQUISA",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "20",
+            "CAMPOBD": null,
+            "SEQUENCIA": 3,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "STATUS_EXECUCAO",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "20",
+            "CAMPOBD": null,
+            "SEQUENCIA": 2,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "TITULO_LAUDO",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "({NR_PROCEDIMENTO}) - Ecg Convencional De Até 12 Derivações",
+            "CAMPOBD": null,
+            "SEQUENCIA": 4,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "SEQUENCE",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "LAUDO_PACIENTE_SEQ",
+            "CAMPOBD": null,
+            "SEQUENCIA": 5,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        },
+        {
+            "DESCRICAO": "ATUALIZAR_STATUS_EXECUCAO",
+            "FILTRO": "Parâmetro Interno",
+            "VALOR": "22",
+            "CAMPOBD": null,
+            "SEQUENCIA": 6,
+            "NUMERO": false,
+            "OBRIGATORIO": false
+        }
+    ]
+}

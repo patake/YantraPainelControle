@@ -185,7 +185,7 @@ new #[Title('Equipamentos')] class extends Component {
             @forelse ($this->devices as $device)
                 <flux:table.row :key="$device->id">
                     <flux:table.cell>
-                        <div class="font-medium">{{ $device->hostname }}</div>
+                        <flux:link :href="route('staff.devices.show', $device)" wire:navigate class="font-medium">{{ $device->hostname }}</flux:link>
                         <div class="font-mono text-xs text-zinc-500">{{ $device->domain ?? __('sem domínio') }} · {{ substr($device->signature, 0, 4) }}…{{ substr($device->signature, -4) }}</div>
                     </flux:table.cell>
                     <flux:table.cell>{{ $device->client->trade_name }}</flux:table.cell>

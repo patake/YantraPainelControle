@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Agent\ActivationController;
+use App\Http\Controllers\Api\Agent\ConfigController;
 use App\Http\Controllers\Api\Agent\LatestUpdateController;
 use App\Http\Controllers\Api\Agent\LicenseController;
 use App\Http\Controllers\Api\Agent\PingController;
@@ -27,5 +28,10 @@ Route::prefix('v1/agent')->name('agent.')->middleware('api.log')->group(function
         Route::get('ping', PingController::class)->name('ping');
         Route::get('license', LicenseController::class)->name('license');
         Route::get('updates/latest', LatestUpdateController::class)->name('updates.latest');
+
+        // Rotas de trabalho: só para equipamento em trial ou ativo.
+        Route::middleware('agent.licensed')->group(function () {
+            Route::get('config', ConfigController::class)->name('config');
+        });
     });
 });

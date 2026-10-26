@@ -174,7 +174,7 @@ paths:
         Só a Staff Weega altera SQLs e conexões (R-EXA-3).
       operationId: getConfig
       x-yantra-stage: E5
-      x-yantra-status: planned
+      x-yantra-status: implemented
       parameters:
         - name: If-None-Match
           in: header
@@ -595,6 +595,9 @@ components:
         procedure_code: { type: string, nullable: true }
         destination_folder: { type: string, example: '\\servidor\yantra\ECG' }
         version: { type: integer }
+        print_options:
+          type: object
+          additionalProperties: { type: boolean }
         sql:
           type: object
           description: Os marcadores {X} viram variáveis de ligação (bind) no agente (R-EXA-4).
@@ -624,7 +627,8 @@ components:
         kind: { type: string, enum: [internal, param, filter, info] }
         placeholder: { type: string, example: DT_PEDIDO }
         label: { type: string, nullable: true, example: Data do pedido }
-        input: { type: string, enum: [text, date, select, number] }
+        input: { type: string, enum: [text, date, select, number, textarea] }
+        db_column: { type: string, nullable: true, description: Coluna da consulta usada por Parâmetro e Filtro (CAMPOBD do Yantra Cardio 3.0). }
         default_value: { type: string, nullable: true }
         options:
           type: array
