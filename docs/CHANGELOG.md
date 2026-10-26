@@ -38,6 +38,7 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 
 ### Corrigido
 
+- Nas telas de login, 2FA, convite e senha, o botão Entrar ficava ativo e sem o ícone de carregamento depois do clique. Agora o botão fica desativado e mostra o ícone até a página seguinte abrir.
 - No ambiente de desenvolvimento, o PHP-FPM não gravava o `laravel.log` nem as views compiladas ("Permission denied"). O artisan criava esses arquivos como root, e o PHP-FPM rodava como `www-data`. Agora o PHP-FPM do container de desenvolvimento roda como root. O erro aparecia na tela Aparência e impedia a confirmação do código do 2FA.
 
 ## E5 · Exames, conexão do ERP e parametrização — 26/10/2026
