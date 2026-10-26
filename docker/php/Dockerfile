@@ -9,5 +9,9 @@ RUN apk add --no-cache icu-libs libzip libpq \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY conf.d/yantra.ini /usr/local/etc/php/conf.d/yantra.ini
+COPY fpm-dev.conf /usr/local/etc/php-fpm.d/zz-yantra-dev.conf
 
 WORKDIR /var/www/html
+
+# -R permite o pool como root (fpm-dev.conf). Só para desenvolvimento.
+CMD ["php-fpm", "-R"]

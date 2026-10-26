@@ -38,6 +38,15 @@ class HotkeyControllerTest extends TestCase
             ->assertJsonPath('hotkey', 'Ctrl+Shift+Y');
     }
 
+    public function test_parameters_bring_ctrl_y_when_the_device_has_no_combination(): void
+    {
+        $device = Device::factory()->active()->create();
+
+        $this->withToken($this->tokenFor($device))
+            ->getJson(route('agent.config'))
+            ->assertJsonPath('hotkey', 'Ctrl+Y');
+    }
+
     public function test_rejects_a_combination_without_ctrl_alt_or_win(): void
     {
         $device = Device::factory()->active()->create();

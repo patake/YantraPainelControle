@@ -11,6 +11,11 @@ namespace App\Support;
 class Hotkey
 {
     /**
+     * Combinação padrão do equipamento sem combinação gravada (R-EXA-11).
+     */
+    public const DEFAULT = 'Ctrl+Y';
+
+    /**
      * Modificadores na ordem do formato canônico.
      */
     private const MODIFIERS = ['CTRL' => 'Ctrl', 'CONTROL' => 'Ctrl', 'ALT' => 'Alt', 'SHIFT' => 'Shift', 'WIN' => 'Win', 'WINDOWS' => 'Win'];

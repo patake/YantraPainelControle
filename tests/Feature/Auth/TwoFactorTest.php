@@ -4,6 +4,8 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 /**
@@ -28,6 +30,27 @@ class TwoFactorTest extends TestCase
         $this->get(route('security.edit'))
             ->assertOk()
             ->assertSee('O painel exige a verificação em duas etapas.');
+    }
+
+    public function test_user_confirms_the_setup_with_the_code_of_the_authenticator_app(): void
+    {
+        $user = User::factory()->operatorWithClient()->create();
+        $this->actingAs($user);
+
+        $modal = Livewire::test('pages::settings.two-factor-setup-modal', ['requiresConfirmation' => true])
+            ->dispatch('start-two-factor-setup')
+            ->assertHasNoErrors();
+
+        // O aplicativo autenticador calcula o código com a chave do QR code.
+        $code = app(Google2FA::class)->getCurrentOtp($modal->get('manualSetupKey'));
+
+        $modal->call('showVerificationIfNecessary')
+            ->set('code', $code)
+            ->call('confirmTwoFactor')
+            ->assertHasNoErrors();
+
+        $this->assertTrue($user->fresh()->hasConfirmedTwoFactor());
+        $this->get(route('app.dashboard'))->assertOk();
     }
 
     public function test_user_with_confirmed_two_factor_reaches_the_area(): void

@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# Atalho para os comandos do Docker do Yantra Painel (Git Bash, macOS e Linux)
+# Uso: ./dev <comando> [argumentos]
+set -euo pipefail
+
+COMPOSE="docker compose -f docker-compose.yml"
+
+# No Git Bash / MINGW (MSYS) o docker.exe nao reconhece o pseudo-terminal do MSYS
+# como um console real, entao comandos interativos (psql, shell, tinker) nao abrem.
+# O winpty faz a ponte do TTY. Em terminais nativos (Linux/macOS) fica vazio.
+TTY_WRAP=""
+case "${MSYSTEM:-}" in
+  MINGW*|MSYS*)
+    if command -v winpty >/dev/null 2>&1 && [ -t 1 ]; then
+      TTY_WRAP="winpty"
+    fi
+    ;;
+esac
+
+# Fora de um terminal (script, CI, agente), o exec precisa de -T: sem TTY, o docker recusa o comando.
+EXEC="$COMPOSE exec"
+if [ ! -t 0 ] || [ ! -t 1 ]; then
+  EXEC="$COMPOSE exec -T"
+fi
+
+# Pastas que o Pint confere. O container nao tem git, entao a opcao --dirty nao funciona.
+PINT_PATHS="app bootstrap/app.php config database routes tests"
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  up)
+    $COMPOSE up -d
+    ;;
+  up:build)
+    $COMPOSE build --no-cache "$@"
+    $COMPOSE up -d
+    ;;
+  build)
+    $COMPOSE build "$@"
+    ;;
+  down)
+    $COMPOSE down
+    ;;
+  restart)
+    $COMPOSE restart "$@"
+    ;;
+  ps)
+    $COMPOSE ps
+    ;;
+  logs)
+    $COMPOSE logs -f "$@"
+    ;;
+  shell)
+    # A imagem e Alpine: tem sh, nao tem bash.
+    $TTY_WRAP $COMPOSE exec app sh
+    ;;
+  artisan)
+    $EXEC app php artisan "$@"
+    ;;
+  tinker)
+    $TTY_WRAP $COMPOSE exec app php artisan tinker
+    ;;
+  composer)
+    $EXEC app composer "$@"
+    ;;
+  test)
+    $EXEC app php artisan test --compact "$@"
+    ;;
+  pint)
+    $EXEC app vendor/bin/pint $PINT_PATHS --format agent "$@"
+    ;;
+  npm)
+    # O Node roda num container proprio (perfil dev), criado so para o comando.
+    $COMPOSE run --rm node npm "$@"
+    ;;
+  assets)
+    $COMPOSE run --rm node npm run build
+    ;;
+  psql)
+    # Com argumentos (ex.: ./dev psql -c "select 1"), roda a consulta e sai; sem argumento, abre o psql.
+    if [ "$#" -gt 0 ]; then
+      $COMPOSE exec -T db psql -U yantra -d yantra_painel "$@"
+    else
+      $TTY_WRAP $COMPOSE exec db psql -U yantra -d yantra_painel
+    fi
+    ;;
+  migrate)
+    $EXEC app php artisan migrate "$@"
+    ;;
+  fresh)
+    $EXEC app php artisan migrate:fresh --seed
+    ;;
+  opcache)
+    # Recarrega o php-fpm (SIGUSR2) para limpar o OPcache.
+    $COMPOSE kill -s SIGUSR2 app && echo "OPcache do app recarregado."
+    ;;
+  help|-h|--help)
+    cat <<'EOF'
+
+Uso: ./dev <comando> [argumentos]
+
+Comandos gerais:
+  up              Sobe todos os containers em background
+  up:build        Rebuild sem cache e sobe os containers
+  build [servico] Build com cache (opcional: nome do servico)
+  down            Para e remove os containers
+  restart [serv.] Reinicia os containers
+  ps              Lista os containers em execucao
+  logs [servico]  Exibe os logs (todos ou de um servico)
+
+PHP / Laravel (container app):
+  shell           Abre o shell (sh) no app
+  artisan <cmd>   Executa php artisan <cmd>
+  tinker          Abre o tinker
+  composer <cmd>  Executa composer <cmd>
+  test [args]     Executa php artisan test --compact (ex.: ./dev test --filter=Login)
+  pint            Formata o codigo com o Pint
+
+Telas (container node):
+  npm <cmd>       Executa npm <cmd>
+  assets          Compila as telas (npm run build)
+
+Banco de dados:
+  psql [args]     Abre o psql no banco yantra_painel (ex.: ./dev psql -c "select 1")
+  migrate         Executa as migrations
+  fresh           Recria o banco com os dados de exemplo (apaga todos os dados)
+
+Performance:
+  opcache         Recarrega o OPcache do php-fpm
+
+Qualquer outro comando vai direto para o docker compose (ex.: ./dev exec app php -v).
+
+Exemplos:
+  ./dev up
+  ./dev artisan route:list --path=api
+  ./dev test tests/Feature/Auth
+  ./dev logs app
+
+EOF
+    ;;
+  *)
+    # Passthrough: qualquer outro subcomando docker compose
+    $COMPOSE "$cmd" "$@"
+    ;;
+esac

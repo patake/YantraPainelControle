@@ -22,12 +22,20 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Captura de tela (E7): rota `PUT /api/v1/agent/settings/hotkey`, em que o assistente do agente grava a combinação de teclas aceita pelo Windows.
 - A combinação de teclas tem Ctrl, Alt ou Win e uma tecla (R-EXA-11). O painel grava a combinação no formato canônico, por exemplo `Ctrl+Shift+Y`.
 - A conferência do exame mostra a captura de tela (PNG) ao lado dos PDFs.
+- A combinação padrão da captura de tela é `Ctrl+Y` (R-EXA-11). O administrador troca a combinação na parametrização do equipamento.
+- Atalhos `dev` (Git Bash) e `dev.bat` (cmd e PowerShell) para os comandos do Docker: `up`, `artisan`, `test`, `pint`, `assets`, `psql`, `fresh` e outros. Veja a lista com `./dev help`.
+- Teste automático do cadastro do 2FA com um código TOTP real.
 
 ### Alterado
 
 - O contrato OpenAPI mudou de `resources/openapi/` para `docs/openapi/`. O endereço `/api/docs` continua o mesmo.
 - O usuário novo cria a senha pelo link do convite (7 dias), e não mais pelo link de troca de senha (60 minutos).
-- As regras R-ACE-7 a R-EXA-10 da seção 5.1 da especificação foram confirmadas em 26/10/2026.
+- As regras R-ACE-7 a R-EXA-11 da seção 5.1 da especificação foram confirmadas em 26/10/2026.
+- O roteiro de testes e o `CLAUDE.md` usam os atalhos `dev`.
+
+### Corrigido
+
+- No ambiente de desenvolvimento, o PHP-FPM não gravava o `laravel.log` nem as views compiladas ("Permission denied"). O artisan criava esses arquivos como root, e o PHP-FPM rodava como `www-data`. Agora o PHP-FPM do container de desenvolvimento roda como root. O erro aparecia na tela Aparência e impedia a confirmação do código do 2FA.
 
 ## E5 · Exames, conexão do ERP e parametrização — 26/10/2026
 

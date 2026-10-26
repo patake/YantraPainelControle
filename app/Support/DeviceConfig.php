@@ -52,7 +52,7 @@ final class DeviceConfig
                 'username' => $settings->network_username,
                 'password' => $settings->network_password,
             ] : null,
-            'hotkey' => $settings?->hotkey,
+            'hotkey' => $settings?->hotkey ?? Hotkey::DEFAULT,
             'serial_port' => $settings?->serial_port,
             'erp_connection' => $connection ? [
                 'db_type' => $connection->db_type->value,

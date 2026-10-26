@@ -4,22 +4,33 @@ Este roteiro confere à mão o que o painel já faz (E0 a E7). Cada teste tem os
 
 ## 0. Preparação
 
+Os comandos deste roteiro usam o atalho `dev`, na raiz do projeto. O atalho chama o `docker compose` com o container certo. Para ver todos os comandos, rode `./dev help`.
+
+| Terminal | Como chamar |
+|---|---|
+| Git Bash | `./dev <comando>` |
+| cmd | `dev <comando>` |
+| PowerShell | `.\dev <comando>` |
+
+Os testes com `curl` usam o Git Bash.
+
 1. Abra o Docker Desktop.
 2. Na pasta `C:\YantraPainelControle`, suba o ambiente:
    ```
-   docker compose up -d
+   ./dev up
    ```
 3. Compile as telas:
    ```
-   docker compose run --rm node npm run build
+   ./dev assets
    ```
-4. Recrie o banco com os dados de exemplo:
-   ```
-   docker compose exec -T app php artisan migrate:fresh --seed
-   ```
-5. Instale no celular um aplicativo autenticador, por exemplo o Microsoft Authenticator ou o Google Authenticator.
 
 Cuidado: o passo 4 apaga todos os dados do banco de desenvolvimento.
+
+4. Recrie o banco com os dados de exemplo:
+   ```
+   ./dev fresh
+   ```
+5. Instale no celular um aplicativo autenticador, por exemplo o Microsoft Authenticator ou o Google Authenticator.
 
 Usuários de exemplo, todos com a senha `password`:
 
@@ -41,7 +52,7 @@ Endereços:
 
 1. Rode todos os testes:
    ```
-   docker compose exec -T app php artisan test --compact
+   ./dev test
    ```
 2. Resultado esperado: todos os testes passam. A suíte leva cerca de 1 minuto e meio.
 
@@ -51,6 +62,9 @@ Endereços:
 
 1. Abra <http://localhost:8000> e entre com `admin@weega.com.br` e `password`.
 2. Resultado esperado: o painel abre a tela de Segurança, com o aviso de que o 2FA é obrigatório.
+
+Cuidado: o código do aplicativo depende da hora do celular. Deixe a data e a hora do celular no modo automático. Não saia da tela de Segurança antes de digitar o código: ao voltar para a tela, o painel apaga o cadastro não confirmado, e o QR code lido perde o valor.
+
 3. Clique em **Cadastrar o 2FA**, leia o QR code com o aplicativo e digite o código.
 4. Resultado esperado: o painel mostra os códigos de recuperação. Guarde um código para o teste 2.3.
 5. Clique em **Continuar para o painel**.
@@ -78,7 +92,7 @@ Endereços:
 4. Resultado esperado: a mesma mensagem.
 5. O e-mail de desenvolvimento vai para o log. Leia o link com:
    ```
-   docker compose exec -T app grep -o "http://localhost:8000/reset-password/[^ ]*" storage/logs/laravel.log | tail -1
+   ./dev exec -T app grep -o "http://localhost:8000/reset-password/[^ ]*" storage/logs/laravel.log | tail -1
    ```
 6. Abra o link e tente a senha `curta123456` (11 caracteres).
 7. Resultado esperado: o painel recusa a senha. Uma senha com 12 caracteres ou mais é aceita.
@@ -128,7 +142,7 @@ O e-mail de desenvolvimento vai para o log, com o texto codificado. O comando ab
 
 1. Gere o link do convite. Troque `<e-mail>` pelo e-mail do usuário do teste 3.2:
    ```
-   docker compose exec -T app php artisan tinker --execute '$u = App\Models\User::where("email", "<e-mail>")->sole(); echo URL::temporarySignedRoute("invitation.show", $u->invited_at->copy()->addDays(7), ["user" => $u->id, "sent" => $u->invited_at->getTimestamp()]);'
+   ./dev artisan tinker --execute '$u = App\Models\User::where("email", "<e-mail>")->sole(); echo URL::temporarySignedRoute("invitation.show", $u->invited_at->copy()->addDays(7), ["user" => $u->id, "sent" => $u->invited_at->getTimestamp()]);'
    ```
 2. Abra o link numa janela anônima.
 3. Resultado esperado: a tela **Criar a senha** mostra o nome e o e-mail do usuário.

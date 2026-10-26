@@ -4,19 +4,23 @@ Esta máquina não tem PHP, Composer, Node nem PostgreSQL. Todo o ambiente roda 
 
 A documentação fica em `docs/`. Em cada mudança, atualize o `docs/CHANGELOG.md` (seção "Não publicado") e, quando a mudança cria uma função nova, o `docs/roteiro-de-testes.md`. Uma regra nova que não está na especificação entra na seção "Regras novas" da especificação, com o estado "Pendente".
 
-1. Suba o ambiente com `docker compose up -d`.
-2. Rode os comandos PHP no container `app`: `docker compose exec -T app php artisan ...`, `docker compose exec -T app composer ...`, `docker compose exec -T app vendor/bin/pint ...`.
+Use o atalho `./dev` (Git Bash) ou `dev.bat` (cmd e PowerShell) para os comandos do Docker. Fora de um terminal, o `./dev` acrescenta o `-T` ao `exec`. Veja a lista com `./dev help`.
+
+1. Suba o ambiente com `./dev up`.
+2. Rode os comandos PHP no container `app`: `./dev artisan ...`, `./dev composer ...`, `./dev pint`. Qualquer outro comando vai direto para o `docker compose`, por exemplo `./dev exec -T app php -v`.
 3. Acesse o painel em <http://localhost:8000>. O PostgreSQL 18 responde em localhost:5432 (banco `yantra_painel`, usuário `yantra`).
 4. Use o disco `s3` do Laravel para os arquivos. Em produção, o disco aponta para o bucket da AWS (`sa-east-1`). Em desenvolvimento, aponta para o LocalStack em <http://localhost.localstack.cloud:4566> (bucket `yantra-painel`, criado por `docker/localstack/init-s3.sh`). Veja os arquivos no navegador em <http://localhost:8081> (s3manager).
 
 Cuidado: o LocalStack community não confere permissões e não guarda os objetos depois de reiniciar. Teste no LocalStack só o fluxo de gravação e leitura. A regra de acesso privado só vale no S3 da AWS.
 
-Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `docker compose exec -T app php artisan test --compact`. Rode o Pint com `docker compose exec -T app vendor/bin/pint app bootstrap config database routes tests --format agent`, porque o container não tem Git e a opção `--dirty` não funciona.
+Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `./dev test` (aceita `--filter=...` e caminhos). Rode o Pint com `./dev pint`: o atalho passa as pastas `app bootstrap/app.php config database routes tests`, porque o container não tem Git e a opção `--dirty` não funciona. Não passe a pasta `bootstrap` inteira, porque o Pint altera os arquivos de `bootstrap/cache`.
+
+No container de desenvolvimento, o PHP-FPM roda como root (`docker/php/fpm-dev.conf`), igual ao artisan, à fila e ao agendador. Sem isso, um arquivo criado pelo artisan bloqueia o PHP-FPM com "Permission denied" no `laravel.log` e nas views compiladas.
 
 Telas (Livewire 4 com Flux UI gratuito e Fortify):
 
 1. As páginas ficam em `resources/views/pages/` como componentes de arquivo único (`pages::staff.clients.index`). A área Staff fica em `/staff` (administrador e suporte) e a área Cliente em `/app` (operador).
-2. Compile as telas com `docker compose run --rm node npm run build`. Para recarga automática, use `docker compose --profile dev up -d node`.
+2. Compile as telas com `./dev assets`. Para recarga automática, use `./dev --profile dev up -d node`.
 3. Escreva os textos das telas em português, dentro de `__()`. Os textos em inglês do kit têm tradução em `lang/pt_BR.json`.
 4. O 2FA é obrigatório. Nos testes, use `User::factory()->withTwoFactor()`. O operador precisa de um cliente ativo: use `User::factory()->operatorWithClient()`.
 5. O seeder cria `admin@weega.com.br`, `suporte@weega.com.br` e `operador@hospital-exemplo.com.br`, todos com a senha `password`. No primeiro login, cada um cadastra o 2FA.

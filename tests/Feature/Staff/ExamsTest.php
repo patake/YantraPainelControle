@@ -169,6 +169,7 @@ class ExamsTest extends TestCase
         $this->actingAs($this->admin());
 
         Livewire::test('pages::staff.devices.show', ['device' => $device])
+            ->assertSet('hotkey', 'Ctrl+Y')
             ->set('hotkey', 'Shift+Y')
             ->call('save')
             ->assertHasErrors('hotkey')
