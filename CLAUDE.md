@@ -2,6 +2,8 @@
 
 Esta máquina não tem PHP, Composer, Node nem PostgreSQL. Todo o ambiente roda em Docker (`docker-compose.yml`).
 
+A documentação fica em `docs/`. Em cada mudança, atualize o `docs/CHANGELOG.md` (seção "Não publicado") e, quando a mudança cria uma função nova, o `docs/roteiro-de-testes.md`. Uma regra nova que não está na especificação entra na seção "Regras novas" da especificação, com o estado "Pendente".
+
 1. Suba o ambiente com `docker compose up -d`.
 2. Rode os comandos PHP no container `app`: `docker compose exec -T app php artisan ...`, `docker compose exec -T app composer ...`, `docker compose exec -T app vendor/bin/pint ...`.
 3. Acesse o painel em <http://localhost:8000>. O PostgreSQL 18 responde em localhost:5432 (banco `yantra_painel`, usuário `yantra`).
