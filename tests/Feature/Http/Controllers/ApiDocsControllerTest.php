@@ -28,7 +28,7 @@ class ApiDocsControllerTest extends TestCase
 
     public function test_marks_only_the_routes_that_exist_as_implemented(): void
     {
-        $spec = Yaml::parseFile(resource_path('openapi/agent-v1.yaml'));
+        $spec = Yaml::parseFile(base_path('docs/openapi/agent-v1.yaml'));
         $routes = collect(app('router')->getRoutes()->getRoutes())->map->uri();
 
         foreach ($spec['paths'] as $path => $operations) {

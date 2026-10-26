@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ApiDocsController extends Controller
 {
-    public const SPEC_PATH = 'openapi/agent-v1.yaml';
+    public const SPEC_PATH = 'docs/openapi/agent-v1.yaml';
 
     /**
      * Tela do Swagger UI com o contrato.
@@ -25,7 +25,7 @@ class ApiDocsController extends Controller
      */
     public function spec(): BinaryFileResponse
     {
-        return response()->file(resource_path(self::SPEC_PATH), [
+        return response()->file(base_path(self::SPEC_PATH), [
             'Content-Type' => 'application/yaml; charset=utf-8',
         ]);
     }
