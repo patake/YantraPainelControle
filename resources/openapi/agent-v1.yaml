@@ -150,7 +150,7 @@ paths:
         token válido e recebe só esta resposta (R-SEG-1).
       operationId: getLicense
       x-yantra-stage: E3
-      x-yantra-status: planned
+      x-yantra-status: implemented
       responses:
         '200':
           description: Licença assinada.

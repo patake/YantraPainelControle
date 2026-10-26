@@ -2,8 +2,11 @@
 
 use App\Enums\UserRole;
 use App\Models\Client;
+use App\Models\License;
+use App\Models\System;
 use App\Models\User;
 use Flux\Flux;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -103,6 +106,85 @@ new class extends Component {
         $operator->writeAudit('updated', ['client_ids' => $before], ['client_ids' => $after]);
 
         unset($this->users, $this->availableOperators);
+    }
+
+    #[Locked]
+    public ?int $editingLicenseId = null;
+
+    public ?int $licenseSystemId = null;
+
+    public ?int $licenseQuantity = null;
+
+    public string $licenseValidUntil = '';
+
+    #[Computed]
+    public function systems()
+    {
+        return System::orderBy('code')->get(['id', 'code', 'name']);
+    }
+
+    public function editLicense(int $licenseId): void
+    {
+        $license = $this->client->licenses()->findOrFail($licenseId);
+
+        $this->editingLicenseId = $license->id;
+        $this->licenseSystemId = $license->system_id;
+        $this->licenseQuantity = $license->quantity;
+        $this->licenseValidUntil = $license->valid_until?->format('Y-m-d') ?? '';
+    }
+
+    public function cancelLicense(): void
+    {
+        $this->reset('editingLicenseId', 'licenseSystemId', 'licenseQuantity', 'licenseValidUntil');
+        $this->resetValidation();
+    }
+
+    /**
+     * Cria ou altera um pacote de licenças. Só o administrador altera (R-ACE-4).
+     */
+    public function saveLicense(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $license = $this->editingLicenseId
+            ? $this->client->licenses()->findOrFail($this->editingLicenseId)
+            : new License(['client_id' => $this->clientId]);
+
+        $this->validate([
+            'licenseSystemId' => [
+                'required', 'integer', 'exists:systems,id',
+                Rule::unique('licenses', 'system_id')->where('client_id', $this->clientId)->ignore($license->id),
+            ],
+            'licenseQuantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'licenseValidUntil' => ['nullable', 'date'],
+        ], [
+            'licenseSystemId.unique' => __('O cliente já tem um pacote deste sistema. Altere o pacote existente.'),
+        ], [
+            'licenseSystemId' => __('sistema'),
+            'licenseQuantity' => __('quantidade'),
+            'licenseValidUntil' => __('validade'),
+        ]);
+
+        $license->system_id = $this->licenseSystemId;
+        $used = $license->exists ? $license->usedCount() : 0;
+
+        // O pacote não fica menor que o uso atual: bloqueie equipamentos antes.
+        if ($this->licenseQuantity < $used) {
+            $this->addError('licenseQuantity', __('O cliente usa :used licenças deste sistema. Bloqueie equipamentos antes de reduzir o pacote.', ['used' => $used]));
+
+            return;
+        }
+
+        $license->fill([
+            'system_id' => $this->licenseSystemId,
+            'quantity' => $this->licenseQuantity,
+            'valid_until' => $this->licenseValidUntil !== '' ? $this->licenseValidUntil : null,
+        ])->save();
+
+        $this->cancelLicense();
+        unset($this->licenses, $this->client);
+
+        Flux::toast(variant: 'success', text: __('Pacote de licenças salvo.'));
     }
 
     public function render()
@@ -209,13 +291,33 @@ new class extends Component {
 
     @if ($tab === 'licencas')
         <flux:card class="flex flex-col gap-4">
-            <flux:text>{{ __('O cadastro de licenças entra na etapa E3. Esta lista mostra os pacotes já cadastrados.') }}</flux:text>
+            <flux:text>{{ __('Em uso = equipamentos em trial ou ativos. O trial já usa uma licença.') }}</flux:text>
+
+            @can('update', $this->client)
+                <form wire:submit="saveLicense" class="grid items-end gap-3 sm:grid-cols-4">
+                    <flux:select wire:model="licenseSystemId" :label="__('Sistema')" :placeholder="__('Escolha o sistema')" :disabled="(bool) $editingLicenseId">
+                        @foreach ($this->systems as $system)
+                            <flux:select.option :value="$system->id">{{ $system->code }} · {{ $system->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <flux:input wire:model="licenseQuantity" type="number" min="1" :label="__('Quantidade')" />
+                    <flux:input wire:model="licenseValidUntil" type="date" :label="__('Validade (opcional)')" />
+                    <div class="flex gap-2">
+                        <flux:button type="submit" variant="primary">{{ $editingLicenseId ? __('Salvar pacote') : __('Adicionar pacote') }}</flux:button>
+                        @if ($editingLicenseId)
+                            <flux:button wire:click="cancelLicense">{{ __('Cancelar') }}</flux:button>
+                        @endif
+                    </div>
+                </form>
+            @endcan
+
             <flux:table>
                 <flux:table.columns>
                     <flux:table.column>{{ __('Sistema') }}</flux:table.column>
                     <flux:table.column>{{ __('Contratadas') }}</flux:table.column>
                     <flux:table.column>{{ __('Em uso') }}</flux:table.column>
                     <flux:table.column>{{ __('Validade') }}</flux:table.column>
+                    <flux:table.column></flux:table.column>
                 </flux:table.columns>
                 <flux:table.rows>
                     @forelse ($this->licenses as $license)
@@ -224,10 +326,15 @@ new class extends Component {
                             <flux:table.cell class="tabular-nums">{{ $license->quantity }}</flux:table.cell>
                             <flux:table.cell class="tabular-nums">{{ $license->usedCount() }}</flux:table.cell>
                             <flux:table.cell class="tabular-nums">{{ $license->valid_until?->format('d/m/Y') ?? __('Sem prazo') }}</flux:table.cell>
+                            <flux:table.cell align="end">
+                                @can('update', $this->client)
+                                    <flux:button size="sm" variant="ghost" wire:click="editLicense({{ $license->id }})">{{ __('Alterar') }}</flux:button>
+                                @endcan
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row>
-                            <flux:table.cell colspan="4">{{ __('Nenhuma licença cadastrada.') }}</flux:table.cell>
+                            <flux:table.cell colspan="5">{{ __('Nenhuma licença cadastrada.') }}</flux:table.cell>
                         </flux:table.row>
                     @endforelse
                 </flux:table.rows>

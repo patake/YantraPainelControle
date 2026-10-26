@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Agent\ActivationController;
+use App\Http\Controllers\Api\Agent\LicenseController;
 use App\Http\Controllers\Api\Agent\PingController;
 use App\Http\Controllers\Api\Agent\PublicKeyController;
 use App\Http\Controllers\Api\Agent\RegisterController;
@@ -23,5 +24,6 @@ Route::prefix('v1/agent')->name('agent.')->middleware('api.log')->group(function
 
     Route::middleware(['auth:sanctum', 'agent', 'agent.signed'])->group(function () {
         Route::get('ping', PingController::class)->name('ping');
+        Route::get('license', LicenseController::class)->name('license');
     });
 });
