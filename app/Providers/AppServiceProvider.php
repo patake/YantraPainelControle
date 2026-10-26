@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsureTwoFactorIsConfirmed;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Support\ResponseSigner;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,6 +39,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Senha com no mínimo 12 caracteres (R-ACE-8).
         Password::defaults(fn () => Password::min(12));
+
+        // O Livewire reaplica estes middlewares em cada ação de uma tela já aberta. Sem isso, um usuário
+        // desativado, sem 2FA ou com o papel trocado continua a usar a tela até recarregar a página.
+        Livewire::addPersistentMiddleware([
+            EnsureUserIsActive::class,
+            EnsureUserHasRole::class,
+            EnsureTwoFactorIsConfirmed::class,
+        ]);
 
         // A recuperação de senha responde igual para e-mail cadastrado ou não (R-ACE-9).
         $this->app->singleton(FailedPasswordResetLinkRequestResponse::class, fn () => new class implements FailedPasswordResetLinkRequestResponse

@@ -46,6 +46,7 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 
 ### Corrigido
 
+- Segurança: numa tela já aberta, as ações do Livewire não conferiam de novo se o usuário estava ativo, se tinha o papel certo e se tinha o 2FA. Um usuário desativado continuava a usar a tela até recarregar a página. Agora o Livewire reaplica esses 3 middlewares em cada ação.
 - Nas telas de login, 2FA, convite e senha, o botão Entrar ficava ativo e sem o ícone de carregamento depois do clique. Agora o botão fica desativado e mostra o ícone até a página seguinte abrir.
 - No ambiente de desenvolvimento, o PHP-FPM não gravava o `laravel.log` nem as views compiladas ("Permission denied"). O artisan criava esses arquivos como root, e o PHP-FPM rodava como `www-data`. Agora o PHP-FPM do container de desenvolvimento roda como root. O erro aparecia na tela Aparência e impedia a confirmação do código do 2FA.
 
