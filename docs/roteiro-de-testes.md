@@ -1,6 +1,6 @@
 # Roteiro de testes
 
-Este roteiro confere à mão o que o painel já faz (E0 a E8). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
+Este roteiro confere à mão o que o painel já faz (E0 a E9). Cada teste tem os passos e o resultado esperado. A suíte automática (seção 1) cobre as mesmas regras e mais casos de erro.
 
 ## 0. Preparação
 
@@ -462,3 +462,20 @@ Só o sistema de porta serial (YO HUB) usa a porta COM.
 11. Resultado esperado: a linha do adaptador e do teste some, porque esses dados eram da porta anterior.
 12. Abra o equipamento SALA-TESTE.
 13. Resultado esperado: a parametrização não mostra o campo **Porta serial**, porque o sistema não é o YO HUB.
+
+## 10. Revisão de segurança (E9)
+
+### 10.1 Cabeçalhos de segurança
+
+1. No PowerShell, rode `curl.exe -sI http://localhost:8000/login`.
+2. Resultado esperado: a resposta tem `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` e `Referrer-Policy: strict-origin-when-cross-origin`. A resposta não tem `Strict-Transport-Security`, porque o endereço não usa HTTPS.
+
+### 10.2 Balanceador da AWS
+
+Cuidado: este teste precisa do ambiente da AWS (`docs/implantacao.md`).
+
+1. Na produção, com `TRUSTED_PROXIES=*`, abra o painel e faça login.
+2. Na área Staff, abra o log de requests.
+3. Resultado esperado: o IP de cada pedido é o IP do computador, e não o IP interno do balanceador (`10.x.x.x`).
+4. Rode `curl.exe -sI https://painel.<domínio>/login`.
+5. Resultado esperado: a resposta tem `Strict-Transport-Security: max-age=31536000; includeSubDomains`.

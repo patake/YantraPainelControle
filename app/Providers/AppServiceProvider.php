@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureUserIsActive;
 use App\Support\ResponseSigner;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +37,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Em desenvolvimento e nos testes, acusa N+1, atributos inexistentes e atribuição em massa ignorada.
         Model::shouldBeStrict(! $this->app->isProduction());
+
+        // Sem confiar no balanceador da AWS, o painel veria o IP do balanceador em todo pedido, e o
+        // limite de ativações por IP (R-LIC-8) valeria para todos os clientes juntos (E9).
+        if ($proxies = config('app.trusted_proxies')) {
+            TrustProxies::at($proxies === '*' ? '*' : explode(',', $proxies));
+        }
 
         // Senha com no mínimo 12 caracteres (R-ACE-8).
         Password::defaults(fn () => Password::min(12));

@@ -47,6 +47,12 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - As regras R-ACE-7 a R-EXA-11 da seção 5.1 da especificação foram confirmadas em 26/10/2026.
 - O roteiro de testes e o `CLAUDE.md` usam os atalhos `dev`.
 
+### Segurança
+
+- Revisão de segurança (E9): todas as respostas levam os cabeçalhos `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` e `Referrer-Policy`. Com HTTPS, as respostas levam o HSTS de 1 ano.
+- Variável nova `TRUSTED_PROXIES`. Atrás do balanceador da AWS, use `*`. Sem a variável, o painel veria o IP do balanceador em todo pedido, e o limite de ativações por IP (R-LIC-8) valeria para todos os clientes juntos.
+- Rascunho da produção na AWS em [`docs/implantacao.md`](implantacao.md): arquitetura, variáveis, passos, alarmes, pendências e decisões.
+
 ### Corrigido
 
 - Segurança: numa tela já aberta, as ações do Livewire não conferiam de novo se o usuário estava ativo, se tinha o papel certo e se tinha o 2FA. Um usuário desativado continuava a usar a tela até recarregar a página. Agora o Livewire reaplica esses 3 middlewares em cada ação.

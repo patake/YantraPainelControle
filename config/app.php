@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Proxies confiáveis
+    |--------------------------------------------------------------------------
+    |
+    | Na AWS, o balanceador termina o HTTPS. Use "*" atrás do balanceador, ou
+    | os IPs separados por vírgula. Vazio no desenvolvimento.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
