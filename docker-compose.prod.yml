@@ -1,0 +1,35 @@
+# Produção do painel na EC2 (E9, docs/implantacao.md). O banco é o RDS, e os arquivos ficam no S3.
+# As variáveis ficam em .env.production, criado a partir do Parameter Store (fora do Git).
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#   docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+services:
+  app:
+    image: ${YANTRA_APP_IMAGE:-yantra-painel-app:latest}
+    env_file: .env.production
+    restart: always
+
+  queue:
+    image: ${YANTRA_APP_IMAGE:-yantra-painel-app:latest}
+    env_file: .env.production
+    command: php artisan queue:work --tries=3 --sleep=3 --max-time=3600
+    restart: always
+    depends_on:
+      - app
+
+  # Tarefas agendadas (routes/console.php): trials, comandos expirados e previews.
+  scheduler:
+    image: ${YANTRA_APP_IMAGE:-yantra-painel-app:latest}
+    env_file: .env.production
+    command: php artisan schedule:work
+    restart: always
+    depends_on:
+      - app
+
+  web:
+    image: ${YANTRA_WEB_IMAGE:-yantra-painel-web:latest}
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - app

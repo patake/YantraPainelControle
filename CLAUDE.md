@@ -15,7 +15,7 @@ Cuidado: o LocalStack community não confere permissões e não guarda os objeto
 
 Os testes usam o banco PostgreSQL `yantra_painel_test`. Rode a suíte com `./dev test` (aceita `--filter=...` e caminhos). Rode o Pint com `./dev pint`: o atalho passa as pastas `app bootstrap/app.php config database routes tests`, porque o container não tem Git e a opção `--dirty` não funciona. Não passe a pasta `bootstrap` inteira, porque o Pint altera os arquivos de `bootstrap/cache`.
 
-No container de desenvolvimento, o PHP-FPM roda como root (`docker/php/fpm-dev.conf`), igual ao artisan, à fila e ao agendador. Sem isso, um arquivo criado pelo artisan bloqueia o PHP-FPM com "Permission denied" no `laravel.log` e nas views compiladas.
+No container de desenvolvimento, o PHP-FPM roda como root (`docker/php/fpm-dev.conf`), igual ao artisan, à fila e ao agendador. Sem isso, um arquivo criado pelo artisan bloqueia o PHP-FPM com "Permission denied" no `laravel.log` e nas views compiladas. A produção usa outra imagem (`docker/production/Dockerfile`, PHP-FPM como `www-data`); veja `docs/implantacao.md`.
 
 No bind mount do Windows, o Livewire às vezes não percebe a mudança num componente de arquivo único. O sinal é um erro "Public method not found" ou "Public property not found" logo depois de editar a tela. Nesse caso, rode `./dev artisan optimize:clear`.
 

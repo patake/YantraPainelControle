@@ -52,7 +52,36 @@ Custo estimado por mês, sem impostos: EC2 cerca de US$ 20, ALB cerca de US$ 22,
 | `LOG_CHANNEL` | `stderr` | O Docker envia o log ao CloudWatch |
 | `YANTRA_SIGNING_KEY_ID`, `YANTRA_SIGNING_SECRET_KEY` | Parameter Store | Chave Ed25519 nova, só da produção (`php artisan yantra:signing-key`) |
 
-Cuidado: a chave pública Ed25519 da produção e o endereço `https://painel.<domínio>/api/v1/agent` entram no instalador do agente (`config.json`: `panel_url`, `panel_public_key`, `panel_key_id`). Um agente instalado sem esses valores fala com o painel de desenvolvimento.
+### 2.1 Instalador do agente
+
+Cuidado: um agente instalado sem o endereço e a chave da produção fala com o painel de desenvolvimento.
+
+1. Com o painel no ar, abra `https://painel.<domínio>/api/v1/agent/public-key` e copie `public_key` e `key_id`.
+2. No repositório do agente, gere o instalador com `-PanelUrl https://painel.<domínio>/api/v1/agent -PanelPublicKey <public_key> -PanelKeyId <key_id>` (README do agente).
+3. Publique o instalador na área Staff, em **Versões do agente**.
+
+### 2.2 Imagens de produção
+
+O arquivo `docker/production/Dockerfile` gera duas imagens a partir da raiz do projeto:
+
+| Imagem | Conteúdo |
+|---|---|
+| `yantra-painel-app` | PHP-FPM 8.5 com o código, as dependências sem as de desenvolvimento, as telas compiladas e o OPcache. Roda como `www-data`. Na partida, cria o cache da configuração, das rotas, dos eventos e das views |
+| `yantra-painel-web` | nginx com `public/` e as telas compiladas. Envia o PHP ao container `app` |
+
+1. Gere as imagens:
+
+   ```bash
+   docker build -f docker/production/Dockerfile --target app -t yantra-painel-app:<versão> .
+   docker build -f docker/production/Dockerfile --target web -t yantra-painel-web:<versão> .
+   ```
+
+2. Envie as imagens ao Amazon ECR, ou gere as imagens na própria EC2.
+3. Na EC2, grave o `.env.production` com as variáveis da seção 2.
+4. Suba os serviços: `YANTRA_APP_IMAGE=yantra-painel-app:<versão> YANTRA_WEB_IMAGE=yantra-painel-web:<versão> docker compose -f docker-compose.prod.yml up -d`.
+5. Rode as migrations: `docker compose -f docker-compose.prod.yml exec app php artisan migrate --force`.
+
+Em 2026-10-27, as duas imagens foram geradas e testadas no Docker Desktop, ligadas ao banco de desenvolvimento: `/up`, o login, a API do agente e as telas compiladas responderam 200. A página de erro não mostrou detalhes internos, e o processo rodou como `www-data`.
 
 ## 3. Passos da implantação
 
@@ -65,8 +94,8 @@ Cuidado: a chave pública Ed25519 da produção e o endereço `https://painel.<d
 7. Crie o perfil IAM da EC2: leitura e gravação no bucket, leitura dos parâmetros `/yantra/*` e envio de logs ao CloudWatch.
 8. Grave os segredos no Parameter Store (seção 2).
 9. Crie a EC2 na sub-rede privada. Instale o Docker e o agente do CloudWatch. O acesso ao servidor fica pelo Session Manager, sem porta SSH aberta.
-10. Gere a imagem de produção do painel (seção 5) e suba os serviços `web`, `app`, `queue` e `scheduler`.
-11. Rode `php artisan migrate --force` e `php artisan db:seed --class=SystemSeeder --force`.
+10. Gere as imagens de produção e suba os serviços `web`, `app`, `queue` e `scheduler` (seção 2.2).
+11. Rode `php artisan migrate --force` no container `app` e `php artisan db:seed --class=SystemSeeder --force`.
 12. Crie o balanceador com o certificado, o redirecionamento de HTTP para HTTPS e a verificação de saúde em `/up`.
 13. Confirme o domínio no SES e saia da sandbox do SES.
 14. Crie o primeiro administrador. Troque a senha e configure o 2FA no primeiro acesso.
@@ -87,10 +116,9 @@ O log do painel vai ao CloudWatch Logs, com retenção de 90 dias. O painel guar
 
 ## 5. Pendências antes da produção
 
-1. **Imagem de produção.** O `docker/php/Dockerfile` atual é de desenvolvimento: o código entra por bind mount, e o PHP-FPM roda como root. A produção precisa de uma imagem com o código, `composer install --no-dev`, `npm run build`, OPcache e o PHP-FPM como `www-data`.
-2. **Backup dos arquivos.** O S3 guarda só os previews (apagados em 1 dia) e os instaladores. Ligue o versionamento do bucket para `agent-releases/`.
-3. **Teste de restauração.** Restaure um backup do RDS numa instância de teste, uma vez antes do piloto e depois a cada 6 meses.
-4. **Instalador do agente.** O instalador grava o `panel_url` e a chave pública da produção.
+1. **Backup dos arquivos.** O S3 guarda só os previews (apagados em 1 dia) e os instaladores. Ligue o versionamento do bucket para `agent-releases/`.
+2. **Teste de restauração.** Restaure um backup do RDS numa instância de teste, uma vez antes do piloto e depois a cada 6 meses.
+3. **Instalador do agente.** Gere o instalador de produção depois que o painel estiver no ar (seção 2.1).
 
 ## 6. Decisões para a Weega
 
