@@ -70,6 +70,19 @@ new class extends Component {
         return $this->client->devices()->with('system')->orderBy('hostname')->get();
     }
 
+    /**
+     * Troca o código de ativação, por exemplo depois que o código vazou (R-LIC-11).
+     */
+    public function regenerateActivationCode(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $this->client->regenerateActivationCode();
+        unset($this->client);
+
+        Flux::toast(text: __('Código de ativação novo gerado.'));
+    }
+
     public function linkOperator(): void
     {
         $this->authorize('update', $this->client);
@@ -337,6 +350,20 @@ new class extends Component {
                 <div><dt class="text-sm text-zinc-500">{{ __('Telefone do contato') }}</dt><dd class="mt-1">{{ $this->client->contact_phone ?: '—' }}</dd></div>
                 <div><dt class="text-sm text-zinc-500">{{ __('Conexão do ERP') }}</dt><dd class="mt-1">{{ $this->client->erpConnection ? __('Cadastrada') : __('Não cadastrada') }}</dd></div>
             </dl>
+        </flux:card>
+
+        <flux:card class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <flux:heading size="lg">{{ __('Código de ativação') }}</flux:heading>
+                <flux:text class="mt-1">{{ __('O técnico digita o CNPJ e este código no assistente de ativação do agente.') }}</flux:text>
+                <p class="mt-3 font-mono text-2xl tracking-widest" data-test="activation-code">{{ $this->client->activation_code }}</p>
+            </div>
+            @can('update', $this->client)
+                <flux:button icon="arrow-path" wire:click="regenerateActivationCode"
+                    wire:confirm="{{ __('O código atual deixa de valer na hora. Os equipamentos já ativados continuam a funcionar. Gerar um código novo?') }}">
+                    {{ __('Gerar novo código') }}
+                </flux:button>
+            @endcan
         </flux:card>
     @endif
 

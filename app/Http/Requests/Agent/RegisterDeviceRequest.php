@@ -34,6 +34,7 @@ class RegisterDeviceRequest extends FormRequest
     {
         return [
             'cnpj' => ['required', 'string', new ValidCnpj],
+            'activation_code' => ['required', 'string', 'max:20'],
             'system' => ['required', 'string', 'max:20'],
             'signature' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
             'hostname' => ['required', 'string', 'max:255'],

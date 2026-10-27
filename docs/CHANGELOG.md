@@ -53,6 +53,7 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 - Revisão severa (E9, [`docs/revisao-de-seguranca.md`](revisao-de-seguranca.md)): a gravação do laudo envia ao agente só as Informações complementares do exame. Antes, o navegador mandava `NR_ATENDIMENTO`, e o laudo ia para outro paciente.
 - O envio de arquivo do agente confere se o conteúdo é do tipo informado (`kind`). Antes, um PNG passava como `pdf`.
 - "Esqueci a senha" aceita 5 pedidos por minuto por IP.
+- Código de ativação do cliente (R-LIC-11): o CNPJ é público, e a ativação do agente pede também um código de 8 caracteres (`ABCD-2345`). A consulta `GET /activation/{cnpj}` recebe o código no cabeçalho `X-Activation-Code`, e `POST /register` no campo `activation_code`. Um CNPJ desconhecido e um código errado recebem o mesmo 404. O código fica criptografado e fora da auditoria. A aba **Dados** do cliente mostra o código, e o administrador gera um código novo. Os clientes que já existem recebem um código na migração. O cliente do seeder usa `YANT-RA26`.
 - Testes de ataque em `SecurityAttacksTest`: XSS, SQL injection, acesso a outro cliente, token do agente × sessão, arquivo disfarçado e excesso de tentativas.
 - Variável nova `TRUSTED_PROXIES`. Atrás do balanceador da AWS, use `*`. Sem a variável, o painel veria o IP do balanceador em todo pedido, e o limite de ativações por IP (R-LIC-8) valeria para todos os clientes juntos.
 - Rascunho da produção na AWS em [`docs/implantacao.md`](implantacao.md): arquitetura, variáveis, passos, alarmes, pendências e decisões.

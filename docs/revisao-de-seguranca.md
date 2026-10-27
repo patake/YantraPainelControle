@@ -20,7 +20,7 @@ Data: 27/10/2026. Escopo: o Yantra Painel (este repositório) e o Yantra Agente 
 | Escalada local no agente | API local, pastas do serviço, atualização | 2 falhas corrigidas (itens 2.6 e 2.7) | `config_test.go`, roteiro 10.1 e 10.2 |
 | Sigilo em trânsito | HTTPS, HSTS e assinatura Ed25519 das respostas | Falha corrigida (item 2.8) | `client_test.go`, `SecurityHeadersTest` |
 | SSRF e XXE | O painel não chama URLs informadas pelo usuário e não lê XML | Não se aplica | — |
-| Dependências | `composer audit` e `npm audit`: nenhuma falha. `govulncheck`: 1 falha no `golang.org/x/sys` 0.33 que o código não chama | Item 3.2 | — |
+| Dependências | `composer audit`, `npm audit` e `govulncheck`: nenhuma falha (o `golang.org/x/sys` foi para a 0.44, item 3.2) | Sem falha | — |
 
 ## 2. Falhas corrigidas
 
@@ -35,8 +35,8 @@ Data: 27/10/2026. Escopo: o Yantra Painel (este repositório) e o Yantra Agente 
 
 ## 3. Pontos que pedem decisão
 
-1. **Ativação só com o CNPJ.** O CNPJ é público. Qualquer pessoa com o instalador registra equipamentos falsos no cliente e ocupa as licenças em trial (até 10 por hora por IP). A Staff vê e desativa os equipamentos, mas o hospital fica sem licença até isso. Proposta: um código de ativação por cliente, criado no painel e informado ao técnico, junto com o CNPJ. A mudança afeta a R-LIC e o assistente de ativação.
-2. **`golang.org/x/sys` 0.33.** A falha GO-2026-5024 está numa função que o agente não chama. A atualização para a 0.44 é recomendada e pede a sua aprovação, porque muda uma dependência.
+1. **Ativação só com o CNPJ.** O CNPJ é público. Qualquer pessoa com o instalador registrava equipamentos falsos no cliente e ocupava as licenças em trial. **Aprovado e feito em 27/10/2026:** a ativação pede também o código de ativação do cliente (R-LIC-11).
+2. **`golang.org/x/sys` 0.33.** A falha GO-2026-5024 estava numa função que o agente não chama. **Aprovado e feito em 27/10/2026:** o agente usa a 0.44, e o `govulncheck` não acha mais falhas.
 3. **Pacotes abandonados.** O `laravel-lang` usa os pacotes `dragon-code/*`, marcados como abandonados, sem falha conhecida. Acompanhe uma versão nova do `laravel-lang`.
 4. **Teste de invasão.** Depois da produção na AWS, faça um teste de invasão externo (OWASP ZAP ou uma empresa), com o painel no endereço real.
 

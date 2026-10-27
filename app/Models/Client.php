@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Support\ActivationCode;
 use App\Support\Cnpj;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Empresa cliente da Weega, identificada pelo CNPJ.
  */
 #[Fillable(['cnpj', 'legal_name', 'trade_name', 'contact_name', 'contact_email', 'contact_phone', 'active'])]
+#[Hidden(['activation_code'])]
 class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
@@ -28,7 +31,26 @@ class Client extends Model
     {
         return [
             'active' => 'boolean',
+            'activation_code' => 'encrypted',
         ];
+    }
+
+    /**
+     * Todo cliente novo recebe um código de ativação (R-LIC-11).
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Client $client) {
+            $client->activation_code ??= ActivationCode::generate();
+        });
+    }
+
+    /**
+     * Troca o código de ativação. O código anterior deixa de valer na hora (R-LIC-11).
+     */
+    public function regenerateActivationCode(): void
+    {
+        $this->forceFill(['activation_code' => ActivationCode::generate()])->save();
     }
 
     /**

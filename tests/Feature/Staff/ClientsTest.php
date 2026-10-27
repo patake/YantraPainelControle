@@ -143,4 +143,33 @@ class ClientsTest extends TestCase
             ->call('linkOperator')
             ->assertForbidden();
     }
+
+    /**
+     * R-LIC-11: o cliente novo recebe um código. A Staff vê o código, e só o administrador troca.
+     */
+    public function test_admin_regenerates_the_activation_code_and_support_only_sees_it(): void
+    {
+        $client = Client::factory()->create();
+        $old = $client->activation_code;
+        $this->assertMatchesRegularExpression('/^[A-HJ-KM-NP-Z2-9]{4}-[A-HJ-KM-NP-Z2-9]{4}$/', $old);
+        $this->assertArrayNotHasKey('activation_code', $client->toArray());
+
+        $this->actingAs(User::factory()->support()->withTwoFactor()->create());
+        Livewire::test('pages::staff.clients.show', ['client' => $client])
+            ->assertSee($old)
+            ->assertDontSee('Gerar novo código')
+            ->call('regenerateActivationCode')
+            ->assertForbidden();
+
+        $this->actingAs($this->admin());
+        Livewire::test('pages::staff.clients.show', ['client' => $client])
+            ->call('regenerateActivationCode')
+            ->assertDontSee($old);
+
+        $this->assertNotSame($old, $client->fresh()->activation_code);
+        // A auditoria registra a troca, mas não grava o código.
+        $audit = AuditLog::where('auditable_type', 'Client')->where('auditable_id', (string) $client->id)->where('action', 'updated')->sole();
+        $this->assertSame(['activation_code' => '[alterado]'], $audit->new_values);
+        $this->assertStringNotContainsString($old, json_encode($audit->toArray()));
+    }
 }

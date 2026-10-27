@@ -18,7 +18,8 @@ class AgentRegistrationException extends RuntimeException
 
     public static function unknownClient(): self
     {
-        return new self(__('Nenhum cliente ativo tem este CNPJ.'), Response::HTTP_NOT_FOUND);
+        // Um CNPJ desconhecido e um código de ativação errado têm a mesma mensagem (R-LIC-11).
+        return new self(__('Nenhum cliente ativo tem este CNPJ com este código de ativação.'), Response::HTTP_NOT_FOUND);
     }
 
     public static function systemNotLicensed(string $system): self

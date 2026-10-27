@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Device;
 use App\Models\License;
 use App\Models\System;
+use App\Support\ActivationCode;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,14 +22,15 @@ class RegisterDevice
     public const TRIAL_DAYS = 7;
 
     /**
-     * @param  array{cnpj: string, system: string, signature: string, hostname: string, machine_type?: ?string, domain?: ?string, macs?: ?array<int, string>, windows_version?: ?string, agent_version?: ?string}  $data
+     * @param  array{cnpj: string, activation_code: string, system: string, signature: string, hostname: string, machine_type?: ?string, domain?: ?string, macs?: ?array<int, string>, windows_version?: ?string, agent_version?: ?string}  $data
      * @return array{device: Device, token: string, reinstalled: bool}
      */
     public function handle(array $data, ?string $ip = null): array
     {
         $client = Client::where('cnpj', $data['cnpj'])->where('active', true)->first();
 
-        if ($client === null) {
+        // O CNPJ é público: sem o código de ativação do cliente, o registro não acontece (R-LIC-11).
+        if ($client === null || ! ActivationCode::matches($client->activation_code, $data['activation_code'])) {
             throw AgentRegistrationException::unknownClient();
         }
 

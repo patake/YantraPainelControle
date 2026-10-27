@@ -75,7 +75,9 @@ paths:
       summary: Sistemas e licenças livres do cliente
       description: |
         O assistente de ativação chama esta rota depois de validar os dígitos do CNPJ.
-        Limite: 10 tentativas por hora por IP (R-LIC-8). CNPJ sem cadastro recebe 404.
+        Limite: 10 tentativas por hora por IP (R-LIC-8). O CNPJ é público: a rota pede também o código
+        de ativação do cliente no cabeçalho X-Activation-Code (R-LIC-11). Um CNPJ sem cadastro e um
+        código errado recebem o mesmo 404.
       operationId: getActivation
       security: []
       x-yantra-stage: E2
@@ -86,6 +88,11 @@ paths:
           required: true
           description: CNPJ só com os 14 dígitos.
           schema: { type: string, pattern: '^\d{14}$' }
+        - name: X-Activation-Code
+          in: header
+          required: true
+          description: Código de ativação do cliente, com ou sem o hífen (R-LIC-11).
+          schema: { type: string, example: ABCD-2345 }
       responses:
         '200':
           description: Cliente e sistemas com licença livre.
@@ -109,6 +116,7 @@ paths:
         O equipamento entra em trial por 7 dias (R-LIC-3).
         A mesma assinatura no mesmo cliente reaproveita o equipamento e gera um token novo (R-LIC-7).
         A mesma assinatura em outro cliente recebe 409 (R-LIC-6).
+        Sem o código de ativação certo do cliente, o registro recebe 404 (R-LIC-11).
       operationId: register
       security: []
       x-yantra-stage: E2
@@ -606,9 +614,10 @@ components:
 
     RegisterRequest:
       type: object
-      required: [cnpj, system, signature, hostname]
+      required: [cnpj, activation_code, system, signature, hostname]
       properties:
         cnpj: { type: string, pattern: '^\d{14}$' }
+        activation_code: { type: string, maxLength: 20, example: ABCD-2345, description: 'Código de ativação do cliente (R-LIC-11).' }
         system: { $ref: '#/components/schemas/SystemCode' }
         signature:
           type: string

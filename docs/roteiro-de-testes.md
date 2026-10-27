@@ -181,18 +181,36 @@ O e-mail de desenvolvimento vai para o log, com o texto codificado. O comando ab
 
 Os comandos abaixo simulam o assistente de ativação do agente. Use o Git Bash.
 
-1. Consulte as licenças livres:
+1. Na Staff, abra o cliente do CNPJ `11.222.333/0001-81`. Na aba **Dados**, copie o **Código de ativação**. Nos comandos, troque `<código>` por ele.
+2. Consulte as licenças livres sem o código:
    ```
    curl -s http://localhost:8000/api/v1/agent/activation/11222333000181
    ```
-2. Resultado esperado: o sistema YC_PRT aparece com `"available":1`.
-3. Registre um equipamento:
+3. Resultado esperado: o erro 404 diz que nenhum cliente ativo tem o CNPJ com o código de ativação (R-LIC-11).
+4. Consulte com o código:
    ```
-   curl -s -X POST http://localhost:8000/api/v1/agent/register -H "Accept: application/json" -H "Content-Type: application/json" -d '{"cnpj":"11222333000181","system":"YC_PRT","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","hostname":"SALA-TESTE"}'
+   curl -s http://localhost:8000/api/v1/agent/activation/11222333000181 -H "X-Activation-Code: <código>"
    ```
-4. Resultado esperado: a resposta traz `device_id`, `token` e `"status":"trial"`. Guarde o token.
-5. Repita o registro com outra assinatura (troque os `a` por `b`).
-6. Resultado esperado: o erro 409 diz que todas as licenças estão em uso.
+5. Resultado esperado: o sistema YC_PRT aparece com `"available":1`.
+6. Registre um equipamento:
+   ```
+   curl -s -X POST http://localhost:8000/api/v1/agent/register -H "Accept: application/json" -H "Content-Type: application/json" -d '{"cnpj":"11222333000181","activation_code":"<código>","system":"YC_PRT","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","hostname":"SALA-TESTE"}'
+   ```
+7. Resultado esperado: a resposta traz `device_id`, `token` e `"status":"trial"`. Guarde o token.
+8. Repita o registro com outra assinatura (troque os `a` por `b`).
+9. Resultado esperado: o erro 409 diz que todas as licenças estão em uso.
+
+### 4.2.1 Código de ativação (R-LIC-11)
+
+O cliente "Hospital Exemplo Norte" do seeder tem o código `YANT-RA26`.
+
+1. Como suporte, abra o cliente na aba **Dados**.
+2. Resultado esperado: o card **Código de ativação** mostra o código, sem o botão **Gerar novo código**.
+3. Como administrador, abra o mesmo cliente e clique em **Gerar novo código**. Confirme.
+4. Resultado esperado: o código muda. A consulta do teste 4.2 com o código antigo recebe 404.
+5. Abra **Auditoria**.
+6. Resultado esperado: a alteração do cliente mostra `activation_code` como `[alterado]`, sem o código.
+7. Nos roteiros do agente, use o código novo no lugar de `YANT-RA26`.
 
 ### 4.3 Rotas do equipamento
 

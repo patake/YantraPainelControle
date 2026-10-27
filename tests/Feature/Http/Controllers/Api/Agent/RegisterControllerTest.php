@@ -34,6 +34,7 @@ class RegisterControllerTest extends TestCase
     {
         return array_merge([
             'cnpj' => '11.222.333/0001-81',
+            'activation_code' => $this->client->activation_code,
             'system' => 'YC_PRT',
             'signature' => str_repeat('a1', 32),
             'hostname' => 'CARDIO-SALA-04',
@@ -69,7 +70,24 @@ class RegisterControllerTest extends TestCase
     {
         $this->postJson(route('agent.register'), $this->payload(['cnpj' => '45997418000153']))
             ->assertNotFound()
-            ->assertJsonPath('message', 'Nenhum cliente ativo tem este CNPJ.');
+            ->assertJsonPath('message', 'Nenhum cliente ativo tem este CNPJ com este código de ativação.');
+    }
+
+    /**
+     * R-LIC-11: sem o código de ativação do cliente, o registro não ocupa uma licença.
+     */
+    public function test_needs_the_activation_code_of_the_client(): void
+    {
+        $this->postJson(route('agent.register'), $this->payload(['activation_code' => 'ERRA-DO22']))
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Nenhum cliente ativo tem este CNPJ com este código de ativação.');
+        $this->postJson(route('agent.register'), $this->payload(['activation_code' => null]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('activation_code');
+        $this->assertSame(0, $this->client->devices()->count());
+
+        $this->postJson(route('agent.register'), $this->payload(['activation_code' => strtolower(str_replace('-', '', $this->client->activation_code))]))
+            ->assertCreated();
     }
 
     public function test_returns_422_for_a_system_without_license(): void

@@ -24,7 +24,8 @@ class ActivationControllerTest extends TestCase
         Device::factory()->count(2)->create(['client_id' => $client->id, 'system_id' => $cardio->id]);
         Device::factory()->active()->create(['client_id' => $client->id, 'system_id' => $hub->id]);
 
-        $this->getJson(route('agent.activation', '11222333000181'))
+        $this->withHeader('X-Activation-Code', $client->activation_code)
+            ->getJson(route('agent.activation', '11222333000181'))
             ->assertOk()
             ->assertHeader(ResponseSigner::HEADER_SIGNATURE)
             ->assertExactJson([
@@ -40,9 +41,33 @@ class ActivationControllerTest extends TestCase
     {
         $license = License::factory()->expired()->create();
 
-        $this->getJson(route('agent.activation', $license->client->cnpj))
+        $this->withHeader('X-Activation-Code', $license->client->activation_code)
+            ->getJson(route('agent.activation', $license->client->cnpj))
             ->assertOk()
             ->assertJsonPath('systems', []);
+    }
+
+    /**
+     * R-LIC-11: o CNPJ é público, e a consulta pede também o código de ativação do cliente.
+     */
+    public function test_needs_the_activation_code_of_the_client(): void
+    {
+        $client = Client::factory()->create(['cnpj' => '11222333000181', 'activation_code' => 'ABCD-2345']);
+        $other = Client::factory()->create();
+        $url = route('agent.activation', '11222333000181');
+
+        $this->getJson($url)->assertNotFound();
+        $this->withHeader('X-Activation-Code', 'ABCD-2346')->getJson($url)->assertNotFound()
+            ->assertJsonPath('message', 'Nenhum cliente ativo tem este CNPJ com este código de ativação.');
+        $this->withHeader('X-Activation-Code', $other->activation_code)->getJson($url)->assertNotFound();
+
+        // O técnico digita sem o hífen e em minúsculas.
+        $this->withHeader('X-Activation-Code', 'abcd2345')->getJson($url)->assertOk();
+
+        // O código novo invalida o anterior.
+        $client->regenerateActivationCode();
+        $this->withHeader('X-Activation-Code', 'ABCD-2345')->getJson($url)->assertNotFound();
+        $this->withHeader('X-Activation-Code', $client->fresh()->activation_code)->getJson($url)->assertOk();
     }
 
     public function test_returns_404_for_an_unknown_inactive_or_invalid_cnpj(): void

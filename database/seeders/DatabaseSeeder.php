@@ -41,6 +41,8 @@ class DatabaseSeeder extends Seeder
         $client = Client::factory()->create([
             'legal_name' => 'Hospital Exemplo Norte Ltda.',
             'trade_name' => 'Hospital Exemplo Norte',
+            // Código fixo do desenvolvimento, usado nos roteiros de teste (R-LIC-11).
+            'activation_code' => 'YANT-RA26',
         ]);
 
         $operator = User::factory()->create([
