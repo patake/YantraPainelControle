@@ -91,5 +91,14 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+
+        // O Fortify não limita "Esqueci a senha" por IP: um atacante pediria e-mails para muitos
+        // endereços (E9, revisão de segurança). As rotas do Fortify existem depois do boot.
+        RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        $this->app->booted(function () {
+            $routes = $this->app['router']->getRoutes();
+            $routes->refreshNameLookups();
+            $routes->getByName('password.email')?->middleware('throttle:password-reset');
+        });
     }
 }

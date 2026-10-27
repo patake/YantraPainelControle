@@ -37,10 +37,14 @@ class ExamFileController extends Controller
             return response()->json(['message' => __('O exame não está aberto para arquivos novos.')], Response::HTTP_CONFLICT);
         }
 
+        $kind = $request->input('kind');
+        $mimes = is_string($kind) && isset(self::EXTENSIONS[$kind]) ? self::EXTENSIONS[$kind] : 'pdf,png,txt,json';
+
         $validated = $request->validate([
             'kind' => ['required', Rule::enum(ExamFileKind::class)],
             'sha256' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
-            'file' => ['required', 'file', 'max:51200', 'mimes:pdf,png,txt,json'],
+            // O conteúdo precisa ser do tipo informado: um "pdf" com outro conteúdo fica de fora (E9).
+            'file' => ['required', 'file', 'max:51200', 'mimes:'.$mimes],
         ]);
 
         $upload = $request->file('file');

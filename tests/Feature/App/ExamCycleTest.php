@@ -136,6 +136,35 @@ class ExamCycleTest extends TestCase
         $this->assertTrue($file->fresh()->selected);
     }
 
+    public function test_recording_cannot_change_the_patient_through_the_complementary_info(): void
+    {
+        $this->examType->fields()->create(['kind' => ExamFieldKind::Info, 'placeholder' => 'OBS', 'label' => 'Observação', 'input' => 'textarea']);
+        $exam = $this->openExam();
+        $file = $exam->files()->create(['kind' => ExamFileKind::Pdf, 'original_name' => 'ecg.pdf', 'sha256' => str_repeat('a', 64), 'size_bytes' => 3]);
+        AgentCommand::create([
+            'device_id' => $this->device->id, 'exam_id' => $exam->id, 'type' => CommandType::QueryPatients,
+            'status' => 'done', 'expires_at' => now()->addMinute(),
+            'result' => ['success' => true, 'data' => ['columns' => ['PACIENTE', 'ATENDIMENTO'], 'rows' => [['PACIENTE' => 'PACIENTE EXEMPLO 1', 'ATENDIMENTO' => '4815162']]]],
+        ]);
+        $this->actingAs($this->operator);
+
+        // O navegador manda marcadores fora das Informações complementares (E9, revisão de segurança).
+        Livewire::test('pages::app.exams.show', ['exam' => $exam->fresh()])
+            ->set('patientIndex', 0)
+            ->set('selectedFileIds', [$file->id])
+            ->set('infoValues.OBS', 'ritmo sinusal')
+            ->set('infoValues.ATENDIMENTO', '999999')
+            ->set('infoValues.SEQUENCE', 'X; DROP TABLE LAUDO')
+            ->set('tasyUsername', 'MEDICO')
+            ->set('tasyPassword', 'senha-tasy')
+            ->call('record')
+            ->assertHasNoErrors();
+
+        $command = AgentCommand::where('type', CommandType::RecordReport)->sole();
+        $this->assertSame(['OBS' => 'ritmo sinusal'], $command->payload['values']);
+        $this->assertSame(['OBS' => 'ritmo sinusal'], $exam->fresh()->complementary_info);
+    }
+
     public function test_recording_requires_a_patient_and_a_file(): void
     {
         $exam = $this->openExam();

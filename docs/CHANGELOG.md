@@ -50,6 +50,10 @@ Este arquivo registra as mudanças do Yantra Painel (administrativo e API do age
 ### Segurança
 
 - Revisão de segurança (E9): todas as respostas levam os cabeçalhos `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` e `Referrer-Policy`. Com HTTPS, as respostas levam o HSTS de 1 ano.
+- Revisão severa (E9, [`docs/revisao-de-seguranca.md`](revisao-de-seguranca.md)): a gravação do laudo envia ao agente só as Informações complementares do exame. Antes, o navegador mandava `NR_ATENDIMENTO`, e o laudo ia para outro paciente.
+- O envio de arquivo do agente confere se o conteúdo é do tipo informado (`kind`). Antes, um PNG passava como `pdf`.
+- "Esqueci a senha" aceita 5 pedidos por minuto por IP.
+- Testes de ataque em `SecurityAttacksTest`: XSS, SQL injection, acesso a outro cliente, token do agente × sessão, arquivo disfarçado e excesso de tentativas.
 - Variável nova `TRUSTED_PROXIES`. Atrás do balanceador da AWS, use `*`. Sem a variável, o painel veria o IP do balanceador em todo pedido, e o limite de ativações por IP (R-LIC-8) valeria para todos os clientes juntos.
 - Rascunho da produção na AWS em [`docs/implantacao.md`](implantacao.md): arquitetura, variáveis, passos, alarmes, pendências e decisões.
 - Imagens de produção (E9): `docker/production/Dockerfile` gera a imagem `app` (PHP-FPM como `www-data`, código e telas compiladas dentro da imagem, sem as dependências de desenvolvimento, OPcache sem conferência dos arquivos) e a imagem `web` (nginx com `public/`). O `docker-compose.prod.yml` sobe `app`, `queue`, `scheduler` e `web` com o `.env.production`. O `.dockerignore` deixa o `.env`, o `vendor` e o `node_modules` fora da imagem.

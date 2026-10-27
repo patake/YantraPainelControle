@@ -94,6 +94,11 @@ class ExamCycle
             throw new ExamCycleException(__('Escolha pelo menos um arquivo para o laudo.'));
         }
 
+        // Só as Informações complementares do exame. Sem o filtro, o navegador mandaria um marcador
+        // do paciente, como NR_ATENDIMENTO, e o laudo iria para outro paciente (E9, revisão).
+        $allowed = $exam->examType->fields->where('kind', ExamFieldKind::Info)->pluck('placeholder')->all();
+        $values = array_intersect_key($values, array_flip($allowed));
+
         return DB::transaction(function () use ($exam, $patient, $files, $values, $tasyUsername, $tasyPassword) {
             $exam->files()->update(['selected' => false]);
             $exam->files()->whereIn('id', $files->pluck('id'))->update(['selected' => true]);

@@ -9,6 +9,7 @@ O Yantra Painel é o administrativo da plataforma Yantra: a área da Staff Weega
 | [CHANGELOG.md](CHANGELOG.md) | Mudanças por etapa, com os commits |
 | [roteiro-de-testes.md](roteiro-de-testes.md) | Testes manuais do que já foi desenvolvido |
 | [openapi/agent-v1.yaml](openapi/agent-v1.yaml) | Contrato da API do agente. O painel publica o contrato em `/api/docs` |
+| [revisao-de-seguranca.md](revisao-de-seguranca.md) | Revisão de segurança do painel e do agente (E9): ataques testados, falhas corrigidas e decisões |
 | [implantacao.md](implantacao.md) | Rascunho da produção na AWS (E9): arquitetura, variáveis, passos e alarmes |
 
 ## Fora desta pasta
